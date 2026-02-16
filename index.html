@@ -1,35 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <script src="https://cdn.jsdelivr.net/npm/rss-parser@3.12.0/dist/rss-parser.min.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 10px; background: white; }
-        .video-item { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .video-title { font-weight: bold; color: #007bff; text-decoration: none; display: block; margin-bottom: 5px; }
-        .video-date { font-size: 0.8em; color: #666; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background: #f9f9f9; }
+        .video-card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #eee; }
+        .video-content { padding: 15px; }
+        .video-title { font-weight: bold; color: #007bff; text-decoration: none; font-size: 16px; display: block; margin-bottom: 8px; }
+        .video-title:hover { text-decoration: underline; }
+        .video-date { font-size: 12px; color: #888; }
+        #rss-feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
     </style>
 </head>
 <body>
-    <div id="rss-feed">Chargement des vidéos...</div>
+    <div id="rss-feed">Chargement de la chaîne CREIA...</div>
 
     <script>
-        const RSS_URL = `https://api.allorigins.win/get?url=${encodeURIComponent('https://podeduc.apps.education.fr/rss-video/creia/')}`;
-        const parser = new RSSParser();
+        // Utilisation d'un proxy public pour éviter les blocages de sécurité
+        const RSS_URL = 'https://podeduc.apps.education.fr/rss-video/creia/';
+        const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`;
 
-        fetch(RSS_URL)
-            .then(response => response.json())
-            .then(data => parser.parseString(data.contents))
-            .then(feed => {
-                let html = '';
-                feed.items.forEach(item => {
-                    html += `
-                        <div class="video-item">
-                            <a class="video-title" href="${item.link}" target="_blank">${item.title}</a>
-                            <span class="video-date">${new Date(item.pubDate).toLocaleDateString()}</span>
-                        </div>`;
-                });
-                document.getElementById('rss-feed').innerHTML = html;
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    let html = '';
+                    data.items.forEach(item => {
+                        html += `
+                            <div class="video-card">
+                                <div class="video-content">
+                                    <a class="video-title" href="${item.link}" target="_blank">${item.title}</a>
+                                    <span class="video-date">Publié le ${new Date(item.pubDate).toLocaleDateString()}</span>
+                                </div>
+                            </div>`;
+                    });
+                    document.getElementById('rss-feed').innerHTML = html;
+                } else {
+                    document.getElementById('rss-feed').innerHTML = "Erreur de chargement du flux.";
+                }
+            })
+            .catch(err => {
+                document.getElementById('rss-feed').innerHTML = "Impossible de contacter PodEduc.";
             });
     </script>
 </body>
