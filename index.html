@@ -3,42 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 10px; background: #fff; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-        .card { border: 1px solid #eee; border-radius: 8px; overflow: hidden; transition: 0.3s; text-decoration: none; color: #333; display: block; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .thumb { width: 100%; aspect-ratio: 16/9; background: #007bff; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; position: relative; }
-        .thumb::after { content: '▶'; position: absolute; font-size: 30px; opacity: 0.8; }
-        .info { padding: 10px; }
-        .title { font-size: 13px; font-weight: bold; line-height: 1.4; height: 3.6em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; margin-bottom: 5px; }
-        .date { font-size: 11px; color: #888; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 15px; background: #fff; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .card { border: 1px solid #ddd; border-radius: 10px; overflow: hidden; transition: 0.3s; text-decoration: none; color: #333; display: flex; flex-direction: column; background: white; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); border-color: #007bff; }
+        
+        /* Image de fond par défaut (obs2.png) */
+        .thumb { 
+            width: 100%; 
+            aspect-ratio: 16/9; 
+            background: #001529 url('https://podeduc.apps.education.fr/media/files/90b3935df23d511b7f9eca549e1c46f60aa0b67364973a8fab048c60cd92d5c4/obs2.png') no-repeat center center; 
+            background-size: cover;
+            position: relative; 
+        }
+        
+        /* Petit bouton Play au centre */
+        .thumb::after { 
+            content: '▶'; 
+            position: absolute; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            font-size: 40px; color: white; opacity: 0.9;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .info { padding: 12px; border-top: 1px solid #eee; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .title { font-size: 13px; font-weight: bold; line-height: 1.4; color: #001529; margin-bottom: 8px; }
+        .date { font-size: 11px; color: #666; font-style: italic; }
     </style>
 </head>
 <body>
-    <div id="feed" class="grid">Chargement de la chaîne...</div>
+    <div id="feed" class="grid">Chargement de la chaîne CREIA...</div>
 
     <script>
         const RSS_URL = 'https://podeduc.apps.education.fr/rss-video/creia/';
-        // Utilisation d'un convertisseur qui extrait aussi les images (enclosures)
         fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`)
             .then(res => res.json())
             .then(data => {
-                let html = '';
-                data.items.forEach(item => {
-                    // On cherche la miniature, sinon on met un fond bleu avec le titre
-                    const img = item.thumbnail || (item.enclosure ? item.enclosure.link : null);
-                    const thumbHtml = img ? `<img src="${img}" class="thumb" style="object-fit:cover">` : `<div class="thumb">CREIA</div>`;
-                    
-                    html += `
-                        <a href="${item.link}" target="_blank" class="card">
-                            ${thumbHtml}
-                            <div class="info">
-                                <div class="title">${item.title}</div>
-                                <div class="date">📅 ${new Date(item.pubDate).toLocaleDateString()}</div>
-                            </div>
-                        </a>`;
-                });
-                document.getElementById('feed').innerHTML = html;
+                if(data.status === 'ok') {
+                    let html = '';
+                    data.items.forEach(item => {
+                        html += `
+                            <a href="${item.link}" target="_blank" class="card">
+                                <div class="thumb"></div>
+                                <div class="info">
+                                    <div class="title">${item.title}</div>
+                                    <div class="date">📅 Publié le ${new Date(item.pubDate).toLocaleDateString()}</div>
+                                </div>
+                            </a>`;
+                    });
+                    document.getElementById('feed').innerHTML = html;
+                }
             });
     </script>
 </body>
