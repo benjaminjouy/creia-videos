@@ -8,35 +8,32 @@
         .card { border: 1px solid #ddd; border-radius: 10px; overflow: hidden; transition: 0.3s; text-decoration: none; color: #333; display: flex; flex-direction: column; background: white; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); border-color: #007bff; }
         
-        /* Thumbnail de remplacement : Dégradé + Icône */
+        /* Image de fond par défaut (obs2.png) */
         .thumb { 
             width: 100%; 
             aspect-ratio: 16/9; 
-            background: linear-gradient(135deg, #001529 0%, #007bff 100%);
+            background: #001529 url('https://podeduc.apps.education.fr/media/files/90b3935df23d511b7f9eca549e1c46f60aa0b67364973a8fab048c60cd92d5c4/obs2.png') no-repeat center center; 
+            background-size: cover;
             position: relative; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
-        /* Icône Play stylisée */
+        /* Petit bouton Play au centre */
         .thumb::after { 
-            content: ''; 
-            width: 0; height: 0; 
-            border-top: 15px solid transparent;
-            border-bottom: 15px solid transparent;
-            border-left: 25px solid white;
-            margin-left: 5px;
-            filter: drop-shadow(0 0 5px rgba(0,0,0,0.3));
+            content: '▶'; 
+            position: absolute; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            font-size: 40px; color: white; opacity: 0.9;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
         .info { padding: 12px; border-top: 1px solid #eee; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .title { font-size: 13px; font-weight: bold; line-height: 1.4; color: #001529; margin-bottom: 8px; height: 3em; overflow: hidden; }
-        .date { font-size: 11px; color: #666; }
+        .title { font-size: 13px; font-weight: bold; line-height: 1.4; color: #001529; margin-bottom: 8px; }
+        .date { font-size: 11px; color: #666; font-style: italic; }
     </style>
 </head>
 <body>
-    <div id="feed" class="grid">Chargement de la chaîne...</div>
+    <div id="feed" class="grid">Chargement de la chaîne CREIA...</div>
 
     <script>
         const RSS_URL = 'https://podeduc.apps.education.fr/rss-video/creia/';
@@ -51,7 +48,7 @@
                                 <div class="thumb"></div>
                                 <div class="info">
                                     <div class="title">${item.title}</div>
-                                    <div class="date">📅 ${new Date(item.pubDate).toLocaleDateString()}</div>
+                                    <div class="date">📅 Publié le ${new Date(item.pubDate).toLocaleDateString()}</div>
                                 </div>
                             </a>`;
                     });
