@@ -2,26 +2,44 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Flux Vidéo CREIA</title>
     <style>
-        body { margin: 0; padding: 0; background: white; overflow-x: hidden; }
-        /* Style pour masquer les logos inutiles du widget si besoin */
-        .ww-feed-footer { display: none !important; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 10px; background: #fff; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .card { border: 1px solid #eee; border-radius: 8px; overflow: hidden; transition: 0.3s; text-decoration: none; color: #333; display: block; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .thumb { width: 100%; aspect-ratio: 16/9; background: #007bff; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; position: relative; }
+        .thumb::after { content: '▶'; position: absolute; font-size: 30px; opacity: 0.8; }
+        .info { padding: 10px; }
+        .title { font-size: 13px; font-weight: bold; line-height: 1.4; height: 3.6em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; margin-bottom: 5px; }
+        .date { font-size: 11px; color: #888; }
     </style>
 </head>
 <body>
-
-    <script src="https://rss.app/static/widgets/embed.js" type="text/javascript" async></script>
-    <ins class="rssapp-list" data-id="u1O8vE1XInX2R9Wp"></ins>
+    <div id="feed" class="grid">Chargement de la chaîne...</div>
 
     <script>
-        // Si le widget ci-dessus ne s'affiche pas, on utilise une solution de secours
-        window.onload = function() {
-            const feed = document.querySelector('.rssapp-list');
-            if (!feed) {
-                document.body.innerHTML = '<p style="text-align:center; font-family:sans-serif; padding:20px;">Chargement du flux PodEduc en cours... <br><br> <a href="https://podeduc.apps.education.fr/video-channels/creia/videos" target="_blank">Cliquez ici si rien ne s'affiche</a></p>';
-            }
-        };
+        const RSS_URL = 'https://podeduc.apps.education.fr/rss-video/creia/';
+        // Utilisation d'un convertisseur qui extrait aussi les images (enclosures)
+        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`)
+            .then(res => res.json())
+            .then(data => {
+                let html = '';
+                data.items.forEach(item => {
+                    // On cherche la miniature, sinon on met un fond bleu avec le titre
+                    const img = item.thumbnail || (item.enclosure ? item.enclosure.link : null);
+                    const thumbHtml = img ? `<img src="${img}" class="thumb" style="object-fit:cover">` : `<div class="thumb">CREIA</div>`;
+                    
+                    html += `
+                        <a href="${item.link}" target="_blank" class="card">
+                            ${thumbHtml}
+                            <div class="info">
+                                <div class="title">${item.title}</div>
+                                <div class="date">📅 ${new Date(item.pubDate).toLocaleDateString()}</div>
+                            </div>
+                        </a>`;
+                });
+                document.getElementById('feed').innerHTML = html;
+            });
     </script>
 </body>
 </html>
