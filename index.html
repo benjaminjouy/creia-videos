@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/rss-parser@3.12.0/dist/rss-parser.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 10px; background: white; }
+        .video-item { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .video-title { font-weight: bold; color: #007bff; text-decoration: none; display: block; margin-bottom: 5px; }
+        .video-date { font-size: 0.8em; color: #666; }
+    </style>
+</head>
+<body>
+    <div id="rss-feed">Chargement des vidéos...</div>
+
+    <script>
+        const RSS_URL = `https://api.allorigins.win/get?url=${encodeURIComponent('https://podeduc.apps.education.fr/rss-video/creia/')}`;
+        const parser = new RSSParser();
+
+        fetch(RSS_URL)
+            .then(response => response.json())
+            .then(data => parser.parseString(data.contents))
+            .then(feed => {
+                let html = '';
+                feed.items.forEach(item => {
+                    html += `
+                        <div class="video-item">
+                            <a class="video-title" href="${item.link}" target="_blank">${item.title}</a>
+                            <span class="video-date">${new Date(item.pubDate).toLocaleDateString()}</span>
+                        </div>`;
+                });
+                document.getElementById('rss-feed').innerHTML = html;
+            });
+    </script>
+</body>
+</html>
