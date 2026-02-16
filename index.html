@@ -2,46 +2,26 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <title>Flux Vidéo CREIA</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background: #f9f9f9; }
-        .video-card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #eee; }
-        .video-content { padding: 15px; }
-        .video-title { font-weight: bold; color: #007bff; text-decoration: none; font-size: 16px; display: block; margin-bottom: 8px; }
-        .video-title:hover { text-decoration: underline; }
-        .video-date { font-size: 12px; color: #888; }
-        #rss-feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        body { margin: 0; padding: 0; background: white; overflow-x: hidden; }
+        /* Style pour masquer les logos inutiles du widget si besoin */
+        .ww-feed-footer { display: none !important; }
     </style>
 </head>
 <body>
-    <div id="rss-feed">Chargement de la chaîne CREIA...</div>
+
+    <script src="https://rss.app/static/widgets/embed.js" type="text/javascript" async></script>
+    <ins class="rssapp-list" data-id="u1O8vE1XInX2R9Wp"></ins>
 
     <script>
-        // Utilisation d'un proxy public pour éviter les blocages de sécurité
-        const RSS_URL = 'https://podeduc.apps.education.fr/rss-video/creia/';
-        const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`;
-
-        fetch(API_URL)
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'ok') {
-                    let html = '';
-                    data.items.forEach(item => {
-                        html += `
-                            <div class="video-card">
-                                <div class="video-content">
-                                    <a class="video-title" href="${item.link}" target="_blank">${item.title}</a>
-                                    <span class="video-date">Publié le ${new Date(item.pubDate).toLocaleDateString()}</span>
-                                </div>
-                            </div>`;
-                    });
-                    document.getElementById('rss-feed').innerHTML = html;
-                } else {
-                    document.getElementById('rss-feed').innerHTML = "Erreur de chargement du flux.";
-                }
-            })
-            .catch(err => {
-                document.getElementById('rss-feed').innerHTML = "Impossible de contacter PodEduc.";
-            });
+        // Si le widget ci-dessus ne s'affiche pas, on utilise une solution de secours
+        window.onload = function() {
+            const feed = document.querySelector('.rssapp-list');
+            if (!feed) {
+                document.body.innerHTML = '<p style="text-align:center; font-family:sans-serif; padding:20px;">Chargement du flux PodEduc en cours... <br><br> <a href="https://podeduc.apps.education.fr/video-channels/creia/videos" target="_blank">Cliquez ici si rien ne s'affiche</a></p>';
+            }
+        };
     </script>
 </body>
 </html>
