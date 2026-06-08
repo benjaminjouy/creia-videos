@@ -13,74 +13,89 @@ jobs:
         uses: actions/checkout@v4.2.2
         with:
           sparse-checkout: .
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
-      - name: Fetch RSS Feed and Build HTML Players
+      - name: Fetch RSS Feed and Build HTML with Python
         run: |
-          curl -sL "https://podeduc.apps.education.fr/rss-video/creia/" > flux.xml
+          cat << 'EOF' > parse_feed.py
+          import urllib.request
+          import xml.etree.ElementTree as ET
+          import re
+
+          url = "https://podeduc.apps.education.fr/rss-video/creia/"
           
-          cat << 'EOF' > index.html
-          <!DOCTYPE html>
+          html_template = """<!DOCTYPE html>
           <html lang="fr">
           <head>
             <meta charset="UTF-8">
             <title>Flux Vidéos CREIA</title>
             <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #ffffff; color: #333; padding: 5px; margin: 0; }
-              .video-container { max-width: 100%; margin: 0 auto; }
-              .video-item { margin-bottom: 35px; border-bottom: 1px solid #eee; padding-bottom: 25px; text-align: center; }
-              .video-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-              .video-title { font-weight: bold; font-size: 15px; margin: 0 0 12px 0; color: #2c3e50; line-height: 1.4; }
-              .player-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-              .player-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+              body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #ffffff; color: #333; padding: 5px; margin: 0; }}
+              .video-container {{ max-width: 100%; margin: 0 auto; }}
+              .video-item {{ margin-bottom: 35px; border-bottom: 1px solid #eee; padding-bottom: 25px; text-align: center; }}
+              .video-item:last-child {{ border-bottom: none; margin-bottom: 0; padding-bottom: 0; }}
+              .video-title {{ font-weight: bold; font-size: 15px; margin: 0 0 12px 0; color: #2c3e50; line-height: 1.4; }}
+              .player-wrapper {{ position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }}
+              .player-wrapper iframe {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }}
             </style>
           </head>
           <body>
             <div class="video-container">
+          """
+
+          try:
+              # Téléchargement du flux RSS
+              response = urllib.request.urlopen(url)
+              data = response.read()
+              root = ET.fromstring(data)
+              
+              video_items_html = ""
+              
+              for item in root.findall('.//item'):
+                  title = item.find('title')
+                  link = item.find('link')
+                  
+                  if title is not None and link is not None:
+                      title_text = title.text.replace("<![CDATA[", "").replace("]]>", "").strip()
+                      link_text = link.text.replace("<![CDATA[", "").replace("]]>", "").strip()
+                      
+                      # Élimination des titres génériques de la chaîne
+                      if title_text in ["PodEduC", "PodEduC - CREIA", "PodEduC  CREIA"]:
+                          continue
+                          
+                      # Extraction propre de l'ID de la vidéo via regex
+                      match = re.search(r'/video/([0-9]+)', link_text)
+                      if match:
+                          video_id = match.group(1)
+                          embed_link = f"https://podeduc.apps.education.fr/video/embed/{video_id}/"
+                          
+                          video_items_html += f"""
+                          <div class="video-item">
+                            <p class="video-title">{title_text}</p>
+                            <div class="player-wrapper">
+                              <iframe src="{embed_link}" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
+                            </div>
+                          </div>
+                          """
+              
+              # Assemblage final
+              full_html = html_template + video_items_html + "\n</div>\n</body>\n</html>"
+              
+              with open("index.html", "w", encoding="utf-8") as f:
+                  f.write(full_html)
+                  
+          except Exception as e:
+              print(f"Erreur lors du traitement: {e}")
           EOF
-
-          # Découpage par bloc <item>
-          csplit -s -k -f item_ flux.xml '/<item>/' '{*}' 2>/dev/null || true
-
-          for f in item_*; do
-            if [ -f "$f" ]; then
-              title=$(grep -oP '(?<=<title>).*?(?=</title>)' "$f" | head -n 1)
-              link=$(grep -oP '(?<=<link>).*?(?=</link>)' "$f" | head -n 1)
-
-              if [ ! -z "$title" ] && [ ! -z "$link" ]; then
-                clean_title=$(echo "$title" | sed 's/<!\[CDATA\[//g' | sed 's/\]\]>//g')
-                clean_link=$(echo "$link" | sed 's/<!\[CDATA\[//g' | sed 's/\]\]>//g')
-                
-                # Extraction de l'identifiant numérique de la vidéo (ex: 148384)
-                video_id=$(echo "$clean_link" | grep -oP '(?<=/video/)[0-9]+')
-
-                # Si on trouve un ID numérique, c'est une vraie vidéo (on vire la page d'accueil globale)
-                if [ ! -z "$video_id" ]; then
-                  embed_link="https://podeduc.apps.education.fr/video/embed/${video_id}/"
-
-                  cat << EOF >> index.html
-                  <div class="video-item">
-                    <p class="video-title">${clean_title}</p>
-                    <div class="player-wrapper">
-                      <iframe src="${embed_link}" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
-                    </div>
-                  </div>
-          EOF
-                fi
-              fi
-            fi
-          done
-
-          rm -f item_* flux.xml
-
-          cat << 'EOF' >> index.html
-            </div>
-          </body>
-          </html>
-          EOF
+          
+          # Exécution du script Python
+          python3 parse_feed.py
+          rm parse_feed.py
 
       - name: Commit and Push changes
         run: |
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Nettoyage final et filtrage ID" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Migration Python : parsing robuste sans erreur 400" && git push)
