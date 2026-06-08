@@ -14,12 +14,53 @@ jobs:
         with:
           sparse-checkout: .
 
-      - name: Fetch RSS Feed and Build Clean Grid
+      - name: Fetch RSS Feed and Build Clean Grid (Node.js)
         run: |
-          curl -sL "https://podeduc.apps.education.fr/rss-video/creia/" > flux.xml
-          
-          cat << 'EOF' > index.html
-          <!DOCTYPE html>
+          node - << 'EOF'
+          const fs = require('fs');
+          const https = require('https');
+
+          const rssUrl = "https://podeduc.apps.education.fr/rss-video/creia/";
+
+          https.get(rssUrl, (res) => {
+            let data = '';
+            res.on('data', (chunk) => { data += chunk; });
+            res.on('end', () => {
+              // Extraction sécurisée des blocs <item>
+              const items = data.split('<item>');
+              // On retire le premier bloc qui contient les métadonnées de la chaîne
+              items.shift(); 
+
+              let videoCardsHtml = '';
+
+              items.forEach(item => {
+                const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/);
+                const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/);
+
+                if (titleMatch && linkMatch) {
+                  const title = titleMatch[1].trim();
+                  const link = linkMatch[1].trim();
+
+                  if (title !== "PodEduC" && title !== "PodEduC - CREIA") {
+                    // Extraction propre de l'identifiant de la vidéo (dernière partie de l'URL ou avant le dernier slash)
+                    const urlParts = link.replace(/\/$/, '').split('/');
+                    const videoId = urlParts[urlParts.length - 1];
+                    const thumbUrl = `https://podeduc.apps.education.fr/media/thumbnails/${videoId}.png`;
+
+                    videoCardsHtml += `
+            <a class="video-card" href="${link}" target="_blank">
+              <div class="thumbnail-wrapper">
+                <img src="${thumbUrl}" onerror="this.src='https://podeduc.apps.education.fr/static/core/img/logo-pod.png'" alt="Vignette">
+              </div>
+              <div class="video-info">
+                <p class="video-title">${title}</p>
+              </div>
+            </a>`;
+                  }
+                }
+              });
+
+              const htmlContent = `<!DOCTYPE html>
           <html lang="fr">
           <head>
             <meta charset="UTF-8">
@@ -37,46 +78,18 @@ jobs:
           </head>
           <body>
             <div class="video-grid">
-          EOF
-
-          # Découpage du flux RSS pour générer les vignettes
-          csplit -s -k -f item_ flux.xml '/<item>/' '{*}' 2>/dev/null || true
-
-          for f in item_*; do
-            if [ -f "$f" ]; then
-              title=$(grep -oP '(?<=<title>).*?(?=</title>)' "$f" | head -n 1)
-              link=$(grep -oP '(?<=<link>).*?(?=</link>)' "$f" | head -n 1)
-
-              if [ ! -z "$title" ] && [ ! -z "$link" ]; then
-                clean_title=$(echo "$title" | sed 's/<!\[CDATA\[//g' | sed 's/\]\]>//g')
-                clean_link=$(echo "$link" | sed 's/<!\[CDATA\[//g' | sed 's/\]\]>//g')
-                
-                if [ "$clean_title" != "PodEduC" ] && [ "$clean_title" != "PodEduC - CREIA" ]; then
-                  # Extraction de l'ID de la vidéo pour reconstituer l'image de la vignette
-                  video_id=$(echo "$clean_link" | grep -oP '(?<=/video/)[0-8a-zA-Z_-]+')
-                  thumb_url="https://podeduc.apps.education.fr/media/thumbnails/${video_id}.png"
-
-                  cat << EOF >> index.html
-                  <a class="video-card" href="${clean_link}" target="_blank">
-                    <div class="thumbnail-wrapper">
-                      <img src="${thumb_url}" onerror="this.src='https://podeduc.apps.education.fr/static/core/img/logo-pod.png'" alt="Vignette">
-                    </div>
-                    <div class="video-info">
-                      <p class="video-title">${clean_title}</p>
-                    </div>
-                  </a>
-          EOF
-                fi
-              fi
-            fi
-          done
-
-          rm -f item_* flux.xml
-
-          cat << 'EOF' >> index.html
+              ${videoCardsHtml}
             </div>
           </body>
-          </html>
+          </html>`;
+
+              fs.writeFileSync('index.html', htmlContent);
+              console.log("index.html généré avec succès !");
+            });
+          }).on('error', (e) => {
+            console.error(e);
+            process.exit(1);
+          });
           EOF
 
       - name: Commit and Push changes
@@ -84,4 +97,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Grille de vignettes cliquables natives sans iframe cassee" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Grille de vignettes via script de generation Node.js" && git push)
