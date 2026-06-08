@@ -16,8 +16,10 @@ jobs:
 
       - name: Fetch RSS Feed and Build HTML
         run: |
+          # Téléchargement du flux
           curl -sL "https://podeduc.apps.education.fr/rss-video/creia/" > flux.xml
           
+          # Initialisation de index.html avec les dimensions idéales pour les lecteurs
           cat << 'EOF' > index.html
           <!DOCTYPE html>
           <html lang="fr">
@@ -25,34 +27,44 @@ jobs:
             <meta charset="UTF-8">
             <title>Flux Vidéos CREIA</title>
             <style>
-              body { font-family: sans-serif; background-color: #ffffff; color: #333; padding: 15px; margin: 0; }
-              .video-container { max-width: 800px; margin: 0 auto; }
-              .video-item { margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-              .video-title { font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 15px; color: #333; }
+              body { font-family: sans-serif; background-color: #ffffff; color: #333; padding: 10px; margin: 0; }
+              .video-container { max-width: 700px; margin: 0 auto; }
+              .video-item { margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 30px; text-align: center; }
+              .video-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+              .video-title { font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 15px; color: #333; line-height: 1.4; }
+              .player-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+              .player-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
             </style>
           </head>
           <body>
             <div class="video-container">
           EOF
 
-          # Extraction par bloc <item> pour lier correctement le titre et son lien d'origine
+          # Découpage tolérant par bloc <item>
           csplit -s -k -f item_ flux.xml '/<item>/' '{*}' 2>/dev/null || true
 
           for f in item_*; do
             if [ -f "$f" ]; then
               title=$(grep -oP '(?<=<title>).*?(?=</title>)' "$f" | head -n 1)
-              # On récupère ici le lien de la page de la vidéo (<link>), pas le fichier brut
               link=$(grep -oP '(?<=<link>).*?(?=</link>)' "$f" | head -n 1)
 
               if [ ! -z "$title" ] && [ ! -z "$link" ]; then
                 clean_title=$(echo "$title" | sed 's/<!\[CDATA\[//g' | sed 's/\]\]>//g')
                 clean_link=$(echo "$link" | sed 's/<!\[CDATA\[//g' | sed 's/\]\]>//g')
                 
+                # Exclusion des titres génériques du flux
                 if [ "$clean_title" != "PodEduC" ] && [ "$clean_title" != "PodEduC - CREIA" ]; then
+                  
+                  # Transformation de l'URL de visionnage en URL de lecteur intégré (embed)
+                  # Exemple : https://podeduc.apps.education.fr/video/123-titre/ -> https://podeduc.apps.education.fr/video/embed/123-titre/
+                  embed_link=$(echo "$clean_link" | sed 's|/video/|/video/embed/|')
+
                   cat << EOF >> index.html
                   <div class="video-item">
                     <p class="video-title">${clean_title}</p>
-                    <a href="${clean_link}" target="_blank" rel="noopener">${clean_link}</a>
+                    <div class="player-wrapper">
+                      <iframe src="${embed_link}" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
+                    </div>
                   </div>
           EOF
                 fi
@@ -73,4 +85,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Utilisation des filtres natifs Magistere" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Lecteurs multimédias autonomes GitHub Pages" && git push)
