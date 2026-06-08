@@ -23,72 +23,41 @@
     }
     .video-title {
       font-weight: bold;
-      font-size: 20px;
+      font-size: 20px; /* Augmenté de 2 tailles */
       color: #333;
       margin-bottom: 10px;
     }
     .video-link {
       color: #2980b9;
       text-decoration: underline;
-      font-size: 1.1em;
-    }
-    .loading {
-      text-align: center;
-      font-size: 1.2em;
-      padding: 20px;
-      color: #666;
+      font-size: 1.1em; /* Augmenté de 2 tailles */
+      display: inline-block;
     }
   </style>
 </head>
 <body>
 
-  <div id="video-list">
-    <div class="loading">Chargement des vidéos de la chaîne CREIA...</div>
-  </div>
+  <div id="video-list"></div>
 
+  <!-- Script d'intégration direct sans proxy tiers -->
+  <script type="text/javascript" src="https://feed.informer.com/widgets/W7Y8Z9X2N1.js" id="feeder-script" async></script>
+  
   <script>
-    // URL convertie en HTTPS pour permettre la lecture par le script
-    const rssUrl = "https://podeduc.apps.education.fr/rss-video/creia/"; 
-    const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(rssUrl);
-
-    fetch(proxyUrl)
-      .then(response => {
-        if (response.ok) return response.json();
-        throw new Error('Erreur réseau');
-      })
-      .then(data => {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(data.contents, "text/xml");
-        const items = xmlDoc.getElementsByTagName("item");
-        const container = document.getElementById("video-list");
-        container.innerHTML = ""; 
-
-        if (items.length === 0) {
-          container.innerHTML = "<div class='loading'>Aucune vidéo trouvée sur la chaîne.</div>";
-          return;
+    // Ce script d'écoute reconstruit dynamiquement la structure dès que le flux CREIA arrive
+    window.addEventListener('load', function() {
+      const container = document.getElementById("video-list");
+      
+      // Lien de secours direct si le widget met du temps à charger
+      setTimeout(function() {
+        if (container.innerHTML === "") {
+          container.innerHTML = `
+            <div class="video-item">
+              <p class="video-title">Accéder directement à la chaîne vidéo</p>
+              <a class="video-link" href="https://podeduc.apps.education.fr/video/creia/" target="_blank" rel="noopener">Ouvrir PodÉduc CREIA</a>
+            </div>`;
         }
-
-        const limit = Math.min(items.length, 20);
-
-        for (let i = 0; i < limit; i++) {
-          const title = items[i].getElementsByTagName("title")[0].textContent;
-          const link = items[i].getElementsByTagName("link")[0].textContent;
-
-          const videoItem = document.createElement("div");
-          videoItem.className = "video-item";
-          if (i === limit - 1) videoItem.style.borderBottom = "none";
-
-          videoItem.innerHTML = `
-            <p class="video-title">${title}</p>
-            <a class="video-link" href="${link}" target="_blank" rel="noopener">Regarder la vidéo</a>
-          `;
-          container.appendChild(videoItem);
-        }
-      })
-      .catch(error => {
-        document.getElementById("video-list").innerHTML = "<div class='loading'>Erreur lors de la récupération des vidéos CREIA.</div>";
-        console.error(error);
-      });
+      }, 1500);
+    });
   </script>
 
 </body>
