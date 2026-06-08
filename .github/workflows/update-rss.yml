@@ -2,8 +2,8 @@ name: Update CREIA RSS Feed
 
 on:
   schedule:
-    - cron: '0 6 * * *' # Tous les jours à 6h du matin
-  workflow_dispatch: # Bouton manuel
+    - cron: '0 6 * * *'
+  workflow_dispatch:
 
 jobs:
   update-feed:
@@ -13,13 +13,13 @@ jobs:
         uses: actions/checkout@v4.2.2
         with:
           sparse-checkout: .
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
       - name: Fetch RSS Feed and Build HTML
         run: |
-          id_flux=$(curl -sL "https://podeduc.apps.education.fr/rss-video/creia/")
+          # Téléchargement du flux original
+          curl -sL "https://podeduc.apps.education.fr/rss-video/creia/" > flux.xml
           
+          # Initialisation du fichier index.html
           cat << 'EOF' > index.html
           <!DOCTYPE html>
           <html lang="fr">
@@ -27,71 +27,32 @@ jobs:
             <meta charset="UTF-8">
             <title>Flux Vidéos CREIA</title>
             <style>
-              body {
-                font-family: 'Segoe UI', Arial, sans-serif;
-                background-color: #ffffff;
-                color: #333;
-                padding: 15px;
-                margin: 0;
-              }
-              .video-container {
-                max-width: 100%;
-                margin: 0 auto;
-              }
-              .video-item {
-                margin-bottom: 40px;
-                border-bottom: 1px solid #e2e5ec;
-                padding-bottom: 30px;
-                text-align: center;
-              }
-              .video-item:last-child {
-                border-bottom: none;
-                margin-bottom: 0;
-                padding-bottom: 0;
-              }
-              .video-title {
-                font-weight: bold;
-                font-size: 18px;
-                color: #2c3e50;
-                margin: 0 0 15px 0;
-                line-height: 1.4;
-              }
-              .player-wrapper {
-                position: relative;
-                padding-bottom: 56.25%; /* Ratio 16:9 */
-                height: 0;
-                overflow: hidden;
-                max-width: 100%;
-                background: #000;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-              }
-              .player-wrapper iframe {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                border: 0;
-              }
+              body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ffffff; color: #333; padding: 15px; margin: 0; }
+              .video-container { max-width: 100%; margin: 0 auto; }
+              .video-item { margin-bottom: 40px; border-bottom: 1px solid #e2e5ec; padding-bottom: 30px; text-align: center; }
+              .video-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+              .video-title { font-weight: bold; font-size: 18px; color: #2c3e50; margin: 0 0 15px 0; line-height: 1.4; }
+              .player-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+              .player-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
             </style>
           </head>
           <body>
             <div class="video-container">
           EOF
 
-          titles=$(echo "$id_flux" | grep -oP '(?<=<title>).*?(?=</title>)' | tail -n +2)
-          links=$(echo "$id_flux" | grep -oP '(?<=<link>).*?(?=</link>)' | tail -n +2)
+          # Extraction précise des titres et des URLs d'enclosure (vidéos mp4)
+          titles=$(grep -oP '(?<=<title>).*?(?=</title>)' flux.xml | tail -n +2)
+          links=$(grep -oP '(?<=<enclosure url=").*?(?=")' flux.xml)
 
+          # Boucle d'assemblage et conversion en adresses embed
           paste <(echo "$titles") <(echo "$links") | while IFS=$'\t' read -r title link; do
             if [ ! -z "$title" ] && [ ! -z "$link" ]; then
               clean_title=$(echo "$title" | sed 's/<!\[CDATA\[//g' | sed 's/\]\]>//g')
-              clean_link=$(echo "$link" | sed 's/<!\[CDATA\[//g' | sed 's/\]\]>//g')
               
-              # Transformation de l'URL classique en URL Embed pour PodÉduc
-              embed_link=$(echo "$clean_link" | sed 's/\/video\//\/video\/embed\//')
+              # Nettoyage et bascule vers l'adresse d'intégration de PodÉduc
+              video_id=$(echo "$link" | grep -oP '(?<=/video/)[0-9a-fA-F-]+')
+              embed_link="https://podeduc.apps.education.fr/video/embed/${video_id}/"
               
-              # On ignore l'élément racine global s'il s'appelle juste "PodEduC"
               if [ "$clean_title" != "PodEduC" ] && [ "$clean_title" != "PodEduC - CREIA" ]; then
                 cat << EOF >> index.html
                 <div class="video-item">
@@ -116,4 +77,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Intégration des mini-lecteurs vidéo" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Correction des lecteurs embed" && git push)
