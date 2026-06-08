@@ -47,23 +47,34 @@ jobs:
                 }
               });
 
-              // Tri par ordre de récence (du plus récent au plus ancien)
+              // Tri par ordre de récence
               videoList.sort((a, b) => b.pubDate - a.pubDate);
 
               let videoCardsHtml = '';
 
               videoList.forEach(video => {
+                // Formater la date en JJ/MM/AAAA
+                let formattedDate = "";
+                if (video.pubDate.getTime() !== 0) {
+                  const day = String(video.pubDate.getDate()).padStart(2, '0');
+                  const month = String(video.pubDate.getMonth() + 1).padStart(2, '0');
+                  const year = video.pubDate.getFullYear();
+                  formattedDate = `${day}/${month}/${year}`;
+                }
+
                 videoCardsHtml += `
             <a class="video-card" href="${video.link}" target="_blank" rel="opener">
               <div class="thumbnail-wrapper">
-                <!-- Dessin SVG natif du logo PodEduC (Zéro lien externe, s'affichera à 100%) -->
                 <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="50" cy="50" r="40" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.3"/>
                   <polygon points="40,30 70,50 40,70" fill="#ffffff" />
                 </svg>
               </div>
               <div class="video-info">
-                <p class="video-title">${video.title}</p>
+                <div>
+                  <p class="video-title">${video.title}</p>
+                  ${formattedDate ? `<p class="video-date">Publié le ${formattedDate}</p>` : ''}
+                </div>
               </div>
             </a>`;
               });
@@ -82,8 +93,9 @@ jobs:
           '    .thumbnail-wrapper { position: relative; width: 100%; padding-bottom: 56.25%; background: linear-gradient(135deg, #001529 0%, #0056b3 100%); overflow: hidden; display: flex; align-items: center; justify-content: center; }\n' +
           '    .pod-logo-svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; transition: transform 0.2s; }\n' +
           '    .video-card:hover .pod-logo-svg { transform: translate(-50%, -50%) scale(1.1); }\n' +
-          '    .video-info { padding: 15px; flex-grow: 1; display: flex; align-items: center; justify-content: center; background: #f8f9fa; min-height: 60px; }\n' +
-          '    .video-title { font-weight: bold; font-size: 14px; margin: 0; color: #2c3e50; line-height: 1.4; text-align: center; }\n' +
+          '    .video-info { padding: 15px; flex-grow: 1; display: flex; align-items: center; justify-content: center; background: #f8f9fa; min-height: 80px; text-align: center; }\n' +
+          '    .video-title { font-weight: bold; font-size: 14px; margin: 0 0 5px 0; color: #2c3e50; line-height: 1.4; }\n' +
+          '    .video-date { font-size: 12px; color: #7f8c8d; margin: 0; }\n' +
           '  </style>\n' +
           '</head>\n' +
           '<body>\n' +
@@ -93,7 +105,7 @@ jobs:
               const finalHtml = htmlHeader + videoCardsHtml + htmlFooter;
 
               fs.writeFileSync('index.html', finalHtml);
-              console.log("index.html mis à jour : trié par date avec visuels SVG garantis !");
+              console.log("index.html mis à jour : trié par date avec dates affichées !");
             });
           }).on('error', (e) => {
             console.error(e);
@@ -106,4 +118,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Tri par recence et integration graphisme SVG natif" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Affichage des dates de parution formatées" && git push)
