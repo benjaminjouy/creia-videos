@@ -26,9 +26,7 @@ jobs:
             let data = '';
             res.on('data', (chunk) => { data += chunk; });
             res.on('end', () => {
-              // Extraction sécurisée des blocs <item>
               const items = data.split('<item>');
-              // On retire le premier bloc qui contient les métadonnées de la chaîne
               items.shift(); 
 
               let videoCardsHtml = '';
@@ -42,13 +40,13 @@ jobs:
                   const link = linkMatch[1].trim();
 
                   if (title !== "PodEduC" && title !== "PodEduC - CREIA") {
-                    // Extraction propre de l'identifiant de la vidéo (dernière partie de l'URL ou avant le dernier slash)
                     const urlParts = link.replace(/\/$/, '').split('/');
                     const videoId = urlParts[urlParts.length - 1];
                     const thumbUrl = `https://podeduc.apps.education.fr/media/thumbnails/${videoId}.png`;
 
+                    /* Ajout du rel="opener" pour forcer la sortie de l'iframe Magistère */
                     videoCardsHtml += `
-            <a class="video-card" href="${link}" target="_blank">
+            <a class="video-card" href="${link}" target="_blank" rel="opener">
               <div class="thumbnail-wrapper">
                 <img src="${thumbUrl}" onerror="this.src='https://podeduc.apps.education.fr/static/core/img/logo-pod.png'" alt="Vignette">
               </div>
@@ -65,6 +63,8 @@ jobs:
           <head>
             <meta charset="UTF-8">
             <title>Chaîne CREIA</title>
+            <!-- Force TOUS les liens à casser l'iframe pour s'ouvrir dehors -->
+            <base target="_blank">
             <style>
               body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #ffffff; color: #333; padding: 10px; margin: 0; }
               .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 100%; margin: 0 auto; }
@@ -84,7 +84,7 @@ jobs:
           </html>`;
 
               fs.writeFileSync('index.html', htmlContent);
-              console.log("index.html généré avec succès !");
+              console.log("index.html mis à jour pour casser l'iframe !");
             });
           }).on('error', (e) => {
             console.error(e);
@@ -97,4 +97,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Grille de vignettes via script de generation Node.js" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Correction ouverture des onglets cibles" && git push)
