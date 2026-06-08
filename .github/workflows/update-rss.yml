@@ -34,12 +34,21 @@ jobs:
               items.forEach(item => {
                 const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/);
                 const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/);
-                const dateMatch = item.match(/<pubDate>(.*?)<\/pubDate>/);
+                
+                // Expression régulière bcp plus large pour attraper pubDate, dc:date ou updated
+                const dateMatch = item.match(/<(?:pubDate|dc:date|updated|date)[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/(?:pubDate|dc:date|updated|date)>/i);
 
                 if (titleMatch && linkMatch) {
                   const title = titleMatch[1].trim();
                   const link = linkMatch[1].trim();
-                  const pubDate = dateMatch ? new Date(dateMatch[1]) : new Date(0);
+                  
+                  let pubDate = new Date(0);
+                  if (dateMatch && dateMatch[1]) {
+                    const parsedDate = new Date(dateMatch[1].trim());
+                    if (!isNaN(parsedDate.getTime())) {
+                      pubDate = parsedDate;
+                    }
+                  }
 
                   if (title !== "PodEduC" && title !== "PodEduC - CREIA") {
                     videoList.push({ title, link, pubDate });
@@ -53,7 +62,6 @@ jobs:
               let videoCardsHtml = '';
 
               videoList.forEach(video => {
-                // Formater la date en JJ/MM/AAAA
                 let formattedDate = "";
                 if (video.pubDate.getTime() !== 0) {
                   const day = String(video.pubDate.getDate()).padStart(2, '0');
@@ -62,6 +70,7 @@ jobs:
                   formattedDate = `${day}/${month}/${year}`;
                 }
 
+                // Ajout direct de la date dans le titre ou juste en dessous
                 videoCardsHtml += `
             <a class="video-card" href="${video.link}" target="_blank" rel="opener">
               <div class="thumbnail-wrapper">
@@ -72,8 +81,7 @@ jobs:
               </div>
               <div class="video-info">
                 <div>
-                  <p class="video-title">${video.title}</p>
-                  ${formattedDate ? `<p class="video-date">Publié le ${formattedDate}</p>` : ''}
+                  <p class="video-title">${video.title} ${formattedDate ? `<span class="title-date">(${formattedDate})</span>` : ''}</p>
                 </div>
               </div>
             </a>`;
@@ -94,8 +102,8 @@ jobs:
           '    .pod-logo-svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; transition: transform 0.2s; }\n' +
           '    .video-card:hover .pod-logo-svg { transform: translate(-50%, -50%) scale(1.1); }\n' +
           '    .video-info { padding: 15px; flex-grow: 1; display: flex; align-items: center; justify-content: center; background: #f8f9fa; min-height: 80px; text-align: center; }\n' +
-          '    .video-title { font-weight: bold; font-size: 14px; margin: 0 0 5px 0; color: #2c3e50; line-height: 1.4; }\n' +
-          '    .video-date { font-size: 12px; color: #7f8c8d; margin: 0; }\n' +
+          '    .video-title { font-weight: bold; font-size: 14px; margin: 0; color: #2c3e50; line-height: 1.4; }\n' +
+          '    .title-date { font-size: 12px; color: #7f8c8d; font-weight: normal; margin-left: 5px; display: inline-block; }\n' +
           '  </style>\n' +
           '</head>\n' +
           '<body>\n' +
@@ -105,7 +113,7 @@ jobs:
               const finalHtml = htmlHeader + videoCardsHtml + htmlFooter;
 
               fs.writeFileSync('index.html', finalHtml);
-              console.log("index.html mis à jour : trié par date avec dates affichées !");
+              console.log("index.html mis à jour avec détection de date robuste.");
             });
           }).on('error', (e) => {
             console.error(e);
@@ -118,4 +126,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Affichage des dates de parution formatées" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Robustesse de la date et injection dans le titre" && git push)
