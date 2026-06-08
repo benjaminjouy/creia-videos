@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Flux Vidéos CREIA</title>
   <style>
+    /* Style général de la page GitHub */
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
       background-color: #ffffff;
@@ -11,85 +12,58 @@
       padding: 10px;
       margin: 0;
     }
-    #video-list {
+    
+    /* Ciblage et reformatage complet du flux généré */
+    .gsh-feed-container, #video-list, ul, li, div {
       max-width: 100%;
       margin: 0 auto;
+      list-style: none;
+      padding: 0;
     }
-    .video-item {
-      margin-bottom: 30px;
-      border-bottom: 1px solid #e2e5ec;
-      padding-bottom: 15px;
-      text-align: center;
+
+    /* Formatage de chaque bloc vidéo */
+    .feed-item, li, .gsh-item {
+      margin-bottom: 30px !important;
+      border-bottom: 1px solid #e2e5ec !important;
+      padding-bottom: 15px !important;
+      text-align: center !important;
+      display: block !important;
     }
-    .video-title {
-      font-weight: bold;
-      font-size: 20px; /* Taille augmentée */
-      color: #333;
-      margin-bottom: 10px;
+    
+    /* Force la suppression de la bordure sur le dernier élément */
+    .feed-item:last-child, li:last-child {
+      border-bottom: none !important;
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
     }
-    .video-link {
-      color: #2980b9;
-      text-decoration: underline;
-      font-size: 1.1em; /* Taille augmentée */
+
+    /* Grossissement des titres à 20px (Augmenté de 2 tailles) */
+    .feed-title, a, h3, .gsh-title {
+      font-weight: bold !important;
+      font-size: 20px !important; 
+      color: #333 !important;
+      margin-bottom: 10px !important;
+      text-decoration: none !important;
+      display: block !important;
     }
-    .loading {
-      text-align: center;
-      font-size: 1.2em;
-      padding: 20px;
-      color: #666;
+
+    /* Création et grossissement du bouton "Regarder la vidéo" à 1.1em */
+    .feed-link-action, a::after, .gsh-link {
+      color: #2980b9 !important;
+      text-decoration: underline !important;
+      font-size: 1.1em !important;
+      font-weight: normal !important;
+      display: block !important;
+      margin-top: 5px !important;
     }
   </style>
 </head>
 <body>
 
   <div id="video-list">
-    <div class="loading">Chargement des vidéos de la chaîne CREIA...</div>
+    <!-- Inclusion HTML directe du flux RSS CREIA via le parseur alternatif -->
+    <script type="text/javascript" src="https://feed.informer.com/widgets/8L6N8WQX2N.js"></script>
   </div>
-
-  <script>
-    const rssUrl = "https://podeduc.apps.education.fr/rss-video/creia/";
-    // Utilisation d'une configuration de secours de rechange pour le proxy
-    const proxyUrl = "https://api.allorigins.win/get?disableCache=true&url=" + encodeURIComponent(rssUrl);
-
-    fetch(proxyUrl)
-      .then(response => {
-        if (response.ok) return response.json();
-        throw new Error('Erreur réseau');
-      })
-      .then(data => {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(data.contents, "text/xml");
-        const items = xmlDoc.getElementsByTagName("item");
-        const container = document.getElementById("video-list");
-        container.innerHTML = ""; 
-
-        if (items.length === 0) {
-          container.innerHTML = "<div class='loading'>Aucune vidéo trouvée sur la chaîne.</div>";
-          return;
-        }
-
-        const limit = Math.min(items.length, 20);
-
-        for (let i = 0; i < limit; i++) {
-          const title = items[i].getElementsByTagName("title")[0].textContent;
-          const link = items[i].getElementsByTagName("link")[0].textContent;
-
-          const videoItem = document.createElement("div");
-          videoItem.className = "video-item";
-          if (i === limit - 1) videoItem.style.borderBottom = "none";
-
-          videoItem.innerHTML = `
-            <p class="video-title">${title}</p>
-            <a class="video-link" href="${link}" target="_blank" rel="noopener">Regarder la vidéo</a>
-          `;
-          container.appendChild(videoItem);
-        }
-      })
-      .catch(error => {
-        document.getElementById("video-list").innerHTML = "<div class='loading'>Erreur lors de la récupération des vidéos CREIA.</div>";
-        console.error(error);
-      });
-  </script>
 
 </body>
 </html>
