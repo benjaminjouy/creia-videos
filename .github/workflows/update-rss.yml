@@ -13,83 +13,66 @@ jobs:
         uses: actions/checkout@v4.2.2
         with:
           sparse-checkout: .
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
-      - name: Fetch RSS Feed and Build HTML with Python
+      - name: Fetch RSS Feed and Build Table HTML
         run: |
           cat << 'EOF' > parse_feed.py
           import urllib.request
           import xml.etree.ElementTree as ET
-          import re
 
           url = "https://podeduc.apps.education.fr/rss-video/creia/"
           
-          html_template = """<!DOCTYPE html>
-          <html lang="fr">
-          <head>
-            <meta charset="UTF-8">
-            <title>Flux Vidéos CREIA</title>
-            <style>
-              body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #ffffff; color: #333; padding: 5px; margin: 0; }}
-              .video-container {{ max-width: 100%; margin: 0 auto; }}
-              .video-item {{ margin-bottom: 35px; border-bottom: 1px solid #eee; padding-bottom: 25px; text-align: center; }}
-              .video-item:last-child {{ border-bottom: none; margin-bottom: 0; padding-bottom: 0; }}
-              .video-title {{ font-weight: bold; font-size: 15px; margin: 0 0 12px 0; color: #2c3e50; line-height: 1.4; }}
-              .player-wrapper {{ position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }}
-              .player-wrapper iframe {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }}
-            </style>
-          </head>
-          <body>
-            <div class="video-container">
+          html_header = """
+          <table style="width: 100%; max-width: 1000px; margin: 0 auto; border-collapse: separate; border-spacing: 20px; font-family: sans-serif; table-layout: fixed;">
+            <tbody>
           """
 
           try:
-              # Téléchargement du flux RSS
               response = urllib.request.urlopen(url)
-              data = response.read()
-              root = ET.fromstring(data)
+              root = ET.fromstring(response.read())
               
-              video_items_html = ""
-              
+              videos = []
               for item in root.findall('.//item'):
                   title = item.find('title')
                   link = item.find('link')
-                  
                   if title is not None and link is not None:
-                      title_text = title.text.replace("<![CDATA[", "").replace("]]>", "").strip()
-                      link_text = link.text.replace("<![CDATA[", "").replace("]]>", "").strip()
-                      
-                      # Élimination des titres génériques de la chaîne
-                      if title_text in ["PodEduC", "PodEduC - CREIA", "PodEduC  CREIA"]:
-                          continue
-                          
-                      # Extraction propre de l'ID de la vidéo via regex
-                      match = re.search(r'/video/([0-9]+)', link_text)
-                      if match:
-                          video_id = match.group(1)
-                          embed_link = f"https://podeduc.apps.education.fr/video/embed/{video_id}/"
-                          
-                          video_items_html += f"""
-                          <div class="video-item">
-                            <p class="video-title">{title_text}</p>
-                            <div class="player-wrapper">
-                              <iframe src="{embed_link}" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
-                            </div>
-                          </div>
-                          """
+                      t_text = title.text.replace("<![CDATA[", "").replace("]]>", "").strip()
+                      l_text = link.text.replace("<![CDATA[", "").replace("]]>", "").strip()
+                      if t_text not in ["PodEduC", "PodEduC - CREIA", "PodEduC  CREIA"] and "/video/" in l_text:
+                          videos.append((t_text, l_text))
               
-              # Assemblage final
-              full_html = html_template + video_items_html + "\n</div>\n</body>\n</html>"
+              # On limite strictement aux 8 premières vidéos du flux
+              videos = videos[:8]
+              
+              rows_html = ""
+              for i in range(0, len(videos), 2):
+                  rows_html += "    <tr>\n"
+                  # Colonne Gauche
+                  title, url = videos[i]
+                  rows_html += f"""      <td style="width: 50%; vertical-align: top; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; text-align: center;">
+                    <p style="font-weight: bold; font-size: 14px; margin-bottom: 12px; color: #333; min-height: 40px;">{title}</p>
+                    <div style="margin: 10px auto;"><a href="{url}">{url}</a></div>
+                  </td>\n"""
+                  
+                  # Colonne Droite (si elle existe)
+                  if i + 1 < len(videos):
+                      title2, url2 = videos[i+1]
+                      rows_html += f"""      <td style="width: 50%; vertical-align: top; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; text-align: center;">
+                    <p style="font-weight: bold; font-size: 14px; margin-bottom: 12px; color: #333; min-height: 40px;">{title2}</p>
+                    <div style="margin: 10px auto;"><a href="{url2}">{url2}</a></div>
+                  </td>\n"""
+                  else:
+                      rows_html += '      <td style="width: 50%;"></td>\n'
+                  rows_html += "    </tr>\n"
+                  
+              full_html = html_header + rows_html + "  </tbody>\n</table>"
               
               with open("index.html", "w", encoding="utf-8") as f:
                   f.write(full_html)
                   
           except Exception as e:
-              print(f"Erreur lors du traitement: {e}")
+              print(f"Erreur: {e}")
           EOF
-          
-          # Exécution du script Python
           python3 parse_feed.py
           rm parse_feed.py
 
@@ -98,4 +81,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Migration Python : parsing robuste sans erreur 400" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Mise a jour auto du tableau des videos" && git push)
