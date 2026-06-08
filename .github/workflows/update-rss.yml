@@ -14,7 +14,7 @@ jobs:
         with:
           sparse-checkout: .
 
-      - name: Fetch RSS Feed and Build Clean Grid (Node.js)
+      - name: Fetch RSS Feed, Sort by Date and Build Grid (Node.js)
         run: |
           node - << 'EOF'
           const fs = require('fs');
@@ -29,31 +29,43 @@ jobs:
               const items = data.split('<item>');
               items.shift(); 
 
-              let videoCardsHtml = '';
+              const videoList = [];
 
               items.forEach(item => {
                 const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/);
                 const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/);
+                const dateMatch = item.match(/<pubDate>(.*?)<\/pubDate>/);
 
                 if (titleMatch && linkMatch) {
                   const title = titleMatch[1].trim();
                   const link = linkMatch[1].trim();
+                  const pubDate = dateMatch ? new Date(dateMatch[1]) : new Date(0);
 
                   if (title !== "PodEduC" && title !== "PodEduC - CREIA") {
-                    // Remplacement de la balise image par un conteneur d'icône CSS natif
-                    videoCardsHtml += `
-            <a class="video-card" href="${link}" target="_blank" rel="opener">
-              <div class="thumbnail-wrapper">
-                <div class="video-icon-css">
-                  <div class="play-triangle"></div>
-                </div>
-              </div>
-              <div class="video-info">
-                <p class="video-title">${title}</p>
-              </div>
-            </a>`;
+                    videoList.push({ title, link, pubDate });
                   }
                 }
+              });
+
+              // Tri par ordre de récence (du plus récent au plus ancien)
+              videoList.sort((a, b) => b.pubDate - a.pubDate);
+
+              let videoCardsHtml = '';
+
+              videoList.forEach(video => {
+                videoCardsHtml += `
+            <a class="video-card" href="${video.link}" target="_blank" rel="opener">
+              <div class="thumbnail-wrapper">
+                <!-- Dessin SVG natif du logo PodEduC (Zéro lien externe, s'affichera à 100%) -->
+                <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.3"/>
+                  <polygon points="40,30 70,50 40,70" fill="#ffffff" />
+                </svg>
+              </div>
+              <div class="video-info">
+                <p class="video-title">${video.title}</p>
+              </div>
+            </a>`;
               });
 
               const htmlHeader = '<!DOCTYPE html>\n' +
@@ -68,14 +80,8 @@ jobs:
           '    .video-card { background: #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.2s; display: flex; flex-direction: column; border: 1px solid #eef2f5; }\n' +
           '    .video-card:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0,123,255,0.15); }\n' +
           '    .thumbnail-wrapper { position: relative; width: 100%; padding-bottom: 56.25%; background: linear-gradient(135deg, #001529 0%, #0056b3 100%); overflow: hidden; display: flex; align-items: center; justify-content: center; }\n' +
-          '    \n' +
-          '    /* Icône de télévision / vidéo en pur CSS */\n' +
-          '    .video-icon-css { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65px; height: 45px; background: rgba(255, 255, 255, 0.2); border-radius: 10px; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.2s; }\n' +
-          '    .video-card:hover .video-icon-css { background: #ff0000; border-color: #ff0000; transform: translate(-50%, -50%) scale(1.1); }\n' +
-          '    \n' +
-          '    /* Triangle blanc du bouton Play */\n' +
-          '    .play-triangle { width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid #ffffff; margin-left: 4px; }\n' +
-          '    \n' +
+          '    .pod-logo-svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; transition: transform 0.2s; }\n' +
+          '    .video-card:hover .pod-logo-svg { transform: translate(-50%, -50%) scale(1.1); }\n' +
           '    .video-info { padding: 15px; flex-grow: 1; display: flex; align-items: center; justify-content: center; background: #f8f9fa; min-height: 60px; }\n' +
           '    .video-title { font-weight: bold; font-size: 14px; margin: 0; color: #2c3e50; line-height: 1.4; text-align: center; }\n' +
           '  </style>\n' +
@@ -87,7 +93,7 @@ jobs:
               const finalHtml = htmlHeader + videoCardsHtml + htmlFooter;
 
               fs.writeFileSync('index.html', finalHtml);
-              console.log("index.html mis à jour avec icônes CSS natifs !");
+              console.log("index.html mis à jour : trié par date avec visuels SVG garantis !");
             });
           }).on('error', (e) => {
             console.error(e);
@@ -100,4 +106,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Boutons de lecture CSS natifs sans image externe" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Tri par recence et integration graphisme SVG natif" && git push)
