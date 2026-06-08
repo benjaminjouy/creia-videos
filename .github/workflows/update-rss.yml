@@ -40,13 +40,13 @@ jobs:
                   const link = linkMatch[1].trim();
 
                   if (title !== "PodEduC" && title !== "PodEduC - CREIA") {
-                    const defaultLogo = "https://portail.apps.education.fr/images/apps/podeduc.png";
-
+                    // Remplacement de la balise image par un conteneur d'icône CSS natif
                     videoCardsHtml += `
             <a class="video-card" href="${link}" target="_blank" rel="opener">
               <div class="thumbnail-wrapper">
-                <img src="${defaultLogo}" alt="PodEduC Logo">
-                <div class="play-button">▶</div>
+                <div class="video-icon-css">
+                  <div class="play-triangle"></div>
+                </div>
               </div>
               <div class="video-info">
                 <p class="video-title">${title}</p>
@@ -56,7 +56,6 @@ jobs:
                 }
               });
 
-              // On utilise la concaténation classique (+) au lieu des backticks pour éviter tout conflit d'interprétation
               const htmlHeader = '<!DOCTYPE html>\n' +
           '<html lang="fr">\n' +
           '<head>\n' +
@@ -68,11 +67,15 @@ jobs:
           '    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 100%; margin: 0 auto; }\n' +
           '    .video-card { background: #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.2s; display: flex; flex-direction: column; border: 1px solid #eef2f5; }\n' +
           '    .video-card:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0,123,255,0.15); }\n' +
-          '    .thumbnail-wrapper { position: relative; width: 100%; padding-bottom: 56.25%; background: linear-gradient(135deg, #001529 0%, #0056b3 100%); overflow: hidden; }\n' +
-          '    .thumbnail-wrapper img { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: auto; height: 60%; object-fit: contain; opacity: 0.8; transition: opacity 0.2s; }\n' +
-          '    .video-card:hover .thumbnail-wrapper img { opacity: 0.4; }\n' +
-          '    .play-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(0,0,0,0.5); border-radius: 50%; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; text-indent: 4px; border: 2px solid white; opacity: 0; transition: opacity 0.2s; z-index: 2; }\n' +
-          '    .video-card:hover .play-button { opacity: 1; }\n' +
+          '    .thumbnail-wrapper { position: relative; width: 100%; padding-bottom: 56.25%; background: linear-gradient(135deg, #001529 0%, #0056b3 100%); overflow: hidden; display: flex; align-items: center; justify-content: center; }\n' +
+          '    \n' +
+          '    /* Icône de télévision / vidéo en pur CSS */\n' +
+          '    .video-icon-css { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65px; height: 45px; background: rgba(255, 255, 255, 0.2); border-radius: 10px; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.2s; }\n' +
+          '    .video-card:hover .video-icon-css { background: #ff0000; border-color: #ff0000; transform: translate(-50%, -50%) scale(1.1); }\n' +
+          '    \n' +
+          '    /* Triangle blanc du bouton Play */\n' +
+          '    .play-triangle { width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid #ffffff; margin-left: 4px; }\n' +
+          '    \n' +
           '    .video-info { padding: 15px; flex-grow: 1; display: flex; align-items: center; justify-content: center; background: #f8f9fa; min-height: 60px; }\n' +
           '    .video-title { font-weight: bold; font-size: 14px; margin: 0; color: #2c3e50; line-height: 1.4; text-align: center; }\n' +
           '  </style>\n' +
@@ -81,12 +84,10 @@ jobs:
           '  <div class="video-grid">\n';
 
               const htmlFooter = '\n  </div>\n</body>\n</html>';
-
-              // Assemblage final ultra-sécurisé des chaînes de caractères
               const finalHtml = htmlHeader + videoCardsHtml + htmlFooter;
 
               fs.writeFileSync('index.html', finalHtml);
-              console.log("index.html mis à jour avec succès et sans bug d'injection !");
+              console.log("index.html mis à jour avec icônes CSS natifs !");
             });
           }).on('error', (e) => {
             console.error(e);
@@ -99,4 +100,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Correction injection HTML videoCardsHtml" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Boutons de lecture CSS natifs sans image externe" && git push)
