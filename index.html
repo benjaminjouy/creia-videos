@@ -8,7 +8,7 @@
       margin: 0; 
       padding: 0; 
       width: 100%; 
-      height: 2000px; 
+      height: 1800px; /* Ajuste ici pour allonger la hauteur globale de ton catalogue */
       overflow: hidden; 
       background-color: #ffffff; 
     }
@@ -20,45 +20,20 @@
       position: relative;
     }
     
-    /* Décalage pour masquer le texte supérieur */
+    /* Décalage augmenté à -480px pour sauter TOUT le texte d'introduction */
     iframe { 
       position: absolute;
-      top: -240px; 
+      top: -480px; 
       left: 0;
       width: 100%; 
-      height: calc(100% + 240px); 
+      height: 100%; /* Bloque la hauteur pour envoyer la popup des cookies dans le vide */
       border: none; 
     }
   </style>
 </head>
 <body>
   <div class="wrapper">
-    <iframe id="pod-iframe" src="https://podeduc.apps.education.fr/creia/" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
+    <iframe src="https://podeduc.apps.education.fr/creia/" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
   </div>
-
-  <script>
-    // Script pour injecter du CSS et masquer la bâche et la popup des cookies
-    const iframe = document.getElementById('pod-iframe');
-    
-    iframe.addEventListener('load', () => {
-      try {
-        const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
-        const style = iframeDocument.createElement('style');
-        
-        // Masque la modale de cookies (.modal) et le fond sombre (.modal-backdrop)
-        style.textContent = `
-          .modal, .modal-backdrop, #cookie-law-info-bar { 
-            display: none !important; 
-            visibility: hidden !important; 
-            opacity: 0 !important; 
-          }
-          body { overflow: auto !important; }
-        `;
-        iframeDocument.head.appendChild(style);
-      } catch (e) {
-        console.log("Note : Blocage de sécurité de l'Éducation Nationale sur l'injection directe (Cross-Origin).");
-      }
-    });
-  </script>
 </body>
 </html>
