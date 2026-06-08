@@ -23,26 +23,37 @@ jobs:
             <meta charset="UTF-8">
             <title>Chaîne CREIA PodEduC</title>
             <style>
+              /* On force l'affichage de la barre de défilement sur Magistère */
               html, body { 
                 margin: 0; 
                 padding: 0; 
                 width: 100%; 
-                height: 100%; 
-                /* Réactivation essentielle de la barre de défilement globale */
+                height: auto; 
+                min-height: 100%;
                 overflow-y: auto !important; 
                 background-color: #ffffff; 
               }
               
-              /* Le wrapper gère maintenant le décalage pour masquer le texte et casser le voile noir */
-              .wrapper {
+              /* Le conteneur définit la hauteur totale visible pour scroller */
+              .scroll-box {
                 width: 100%;
-                height: 2500px; /* Ajuste cette hauteur pour voir plus ou moins de vidéos */
-                margin-top: -1250px; /* Remonté légèrement (un peu plus haut que -1450px) */
+                height: 2800px; /* Grande hauteur pour faire défiler toutes les vidéos */
                 position: relative;
-                background-color: #ffffff;
+                overflow: hidden;
               }
               
-              /* L'iframe reste stable et ne propage plus son voile noir sur toute la page */
+              /* Le masque magique : on coupe les 850 premiers pixels du haut.
+                 Le voile noir et la popup des cookies n'existent plus dans cette zone ! */
+              .clipper {
+                width: 100%;
+                height: 100%;
+                position: absolute;
+                top: 0;
+                left: 0;
+                clip-path: inset(850px 0px 0px 0px);
+                transform: translateY(-850px);
+              }
+              
               iframe { 
                 width: 100%; 
                 height: 100%;
@@ -51,8 +62,10 @@ jobs:
             </style>
           </head>
           <body>
-            <div class="wrapper">
-              <iframe src="https://podeduc.apps.education.fr/creia/" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
+            <div class="scroll-box">
+              <div class="clipper">
+                <iframe src="https://podeduc.apps.education.fr/creia/" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
+              </div>
             </div>
           </body>
           </html>
@@ -63,4 +76,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Rétablissement du scroll et suppression définitive du voile" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Decoupe geometrique clip-path hauteur 850px" && git push)
