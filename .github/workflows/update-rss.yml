@@ -14,7 +14,7 @@ jobs:
         with:
           sparse-checkout: .
 
-      - name: Fetch RSS Feed and Build Table HTML
+      - name: Fetch and Filter RSS Feed with Python
         run: |
           cat << 'EOF' > parse_feed.py
           import urllib.request
@@ -22,53 +22,47 @@ jobs:
 
           url = "https://podeduc.apps.education.fr/rss-video/creia/"
           
-          html_header = """
-          <table style="width: 100%; max-width: 1000px; margin: 0 auto; border-collapse: separate; border-spacing: 20px; font-family: sans-serif; table-layout: fixed;">
-            <tbody>
+          rss_template = """<?xml version="1.0" encoding="UTF-8" ?>
+          <rss version="2.0">
+          <channel>
+            <title>Chaîne Vidéo CREIA</title>
+            <link>https://benjaminjouy.github.io/creia-videos/</link>
+            <description>Les dernières vidéos de la communauté CREIA</description>
           """
 
           try:
               response = urllib.request.urlopen(url)
               root = ET.fromstring(response.read())
               
-              videos = []
+              items_count = 0
+              items_xml = ""
+              
               for item in root.findall('.//item'):
+                  if items_count >= 8: # On bloque strictement à 8 vidéos
+                      break
+                      
                   title = item.find('title')
                   link = item.find('link')
+                  
                   if title is not None and link is not None:
                       t_text = title.text.replace("<![CDATA[", "").replace("]]>", "").strip()
                       l_text = link.text.replace("<![CDATA[", "").replace("]]>", "").strip()
-                      if t_text not in ["PodEduC", "PodEduC - CREIA", "PodEduC  CREIA"] and "/video/" in l_text:
-                          videos.append((t_text, l_text))
+                      
+                      # On ignore les titres globaux de la chaîne
+                      if t_text in ["PodEduC", "PodEduC - CREIA", "PodEduC  CREIA"]:
+                          continue
+                      
+                      items_xml += f"""    <item>
+                <title>{t_text}</title>
+                <link>{l_text}</link>
+                <description>{t_text}</description>
+              </item>\n"""
+                      items_count += 1
+                      
+              full_rss = rss_template + items_xml + "  </channel>\n</rss>"
               
-              # On limite strictement aux 8 premières vidéos du flux
-              videos = videos[:8]
-              
-              rows_html = ""
-              for i in range(0, len(videos), 2):
-                  rows_html += "    <tr>\n"
-                  # Colonne Gauche
-                  title, url = videos[i]
-                  rows_html += f"""      <td style="width: 50%; vertical-align: top; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; text-align: center;">
-                    <p style="font-weight: bold; font-size: 14px; margin-bottom: 12px; color: #333; min-height: 40px;">{title}</p>
-                    <div style="margin: 10px auto;"><a href="{url}">{url}</a></div>
-                  </td>\n"""
-                  
-                  # Colonne Droite (si elle existe)
-                  if i + 1 < len(videos):
-                      title2, url2 = videos[i+1]
-                      rows_html += f"""      <td style="width: 50%; vertical-align: top; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; text-align: center;">
-                    <p style="font-weight: bold; font-size: 14px; margin-bottom: 12px; color: #333; min-height: 40px;">{title2}</p>
-                    <div style="margin: 10px auto;"><a href="{url2}">{url2}</a></div>
-                  </td>\n"""
-                  else:
-                      rows_html += '      <td style="width: 50%;"></td>\n'
-                  rows_html += "    </tr>\n"
-                  
-              full_html = html_header + rows_html + "  </tbody>\n</table>"
-              
-              with open("index.html", "w", encoding="utf-8") as f:
-                  f.write(full_html)
+              with open("flux.xml", "w", encoding="utf-8") as f:
+                  f.write(full_rss)
                   
           except Exception as e:
               print(f"Erreur: {e}")
@@ -80,5 +74,5 @@ jobs:
         run: |
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
-          git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Mise a jour auto du tableau des videos" && git push)
+          git add flux.xml
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Mise à jour du flux RSS épuré" && git push)
