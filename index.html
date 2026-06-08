@@ -23,14 +23,14 @@
     }
     .video-title {
       font-weight: bold;
-      font-size: 20px; /* Taille augmentée */
+      font-size: 20px; /* Taille augmentée de 2 tailles */
       color: #333;
       margin-bottom: 10px;
     }
     .video-link {
       color: #2980b9;
       text-decoration: underline;
-      font-size: 1.1em; /* Taille augmentée */
+      font-size: 1.1em; /* Taille augmentée de 2 tailles */
     }
     .loading {
       text-align: center;
@@ -47,10 +47,10 @@
   </div>
 
   <script>
-    // METS TON LIEN RSS PODEDUC ENTRE LES GUILLEMETS CI-DESSOUS
-    const rssUrl = "https://podeduc.apps.education.fr/feeds/videos/?playlist=METS_ICI_L_ID_DE_TA_PLAYLIST"; 
+    // URL du flux RSS officiel de la chaîne CREIA sur PodÉduc
+    const rssUrl = "https://podeduc.apps.education.fr/rss-video/creia/"; 
     
-    // Utilisation d'un proxy CORS public et ultra-rapide
+    // Utilisation du proxy AllOrigins pour contourner le blocage Cross-Origin (CORS)
     const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(rssUrl);
 
     fetch(proxyUrl)
@@ -60,18 +60,10 @@
       })
       .then(data => {
         const parser = new DOMParser();
-        // PodÉduc utilise généralement le format Atom (xml) ou RSS standard
         const xmlDoc = parser.parseFromString(data.contents, "text/xml");
         
-        // Gestion hybride RSS (<item>) et Atom (<entry>) pour être sûr de capter les vidéos
-        let items = xmlDoc.getElementsByTagName("item");
-        let isAtom = false;
-        
-        if (items.length === 0) {
-          items = xmlDoc.getElementsByTagName("entry");
-          isAtom = true;
-        }
-
+        // PodÉduc génère un flux RSS standard contenant des balises <item>
+        const items = xmlDoc.getElementsByTagName("item");
         const container = document.getElementById("video-list");
         container.innerHTML = ""; 
 
@@ -80,21 +72,12 @@
           return;
         }
 
+        // Limitation de l'affichage aux 20 dernières vidéos
         const limit = Math.min(items.length, 20);
 
         for (let i = 0; i < limit; i++) {
-          let title = "";
-          let link = "";
-
-          if (isAtom) {
-            title = items[i].getElementsByTagName("title")[0].textContent;
-            // Dans Atom, le lien est souvent dans un attribut href
-            const linkNode = items[i].getElementsByTagName("link")[0];
-            link = linkNode.getAttribute("href") || linkNode.textContent;
-          } else {
-            title = items[i].getElementsByTagName("title")[0].textContent;
-            link = items[i].getElementsByTagName("link")[0].textContent;
-          }
+          const title = items[i].getElementsByTagName("title")[0].textContent;
+          const link = items[i].getElementsByTagName("link")[0].textContent;
 
           const videoItem = document.createElement("div");
           videoItem.className = "video-item";
