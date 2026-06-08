@@ -8,7 +8,7 @@
       margin: 0; 
       padding: 0; 
       width: 100%; 
-      height: 2500px; /* Grande hauteur pour voir défiler toutes les vidéos */
+      height: 3000px; /* Augmenté pour défiler encore plus bas */
       overflow: hidden; 
       background-color: #ffffff; 
     }
@@ -20,17 +20,19 @@
       position: relative;
     }
     
-    /* Propulsion de l'iframe vers le haut (-1050px) pour atteindre directement les vidéos */
+    /* Descente extrême (-1450px) pour sauter tout le texte résiduel */
     iframe { 
       position: absolute;
-      top: -1050px; 
-      left: 0;
-      width: 100%; 
-      height: calc(100% + 1050px);
+      top: -1450px; 
+      left: -2%;
+      width: 104%; 
+      height: calc(100% + 1450px);
       border: none; 
       
-      /* Force la boîte de dialogue des cookies à se centrer en dehors de la zone visible */
-      transform: scale(1.02);
+      /* Super-astuce : On réduit l'échelle globale de l'iframe pour forcer la popup 
+         de cookies et son voile noir à rétrécir et à s'isoler tout en haut de la page,
+         rendant la zone du bas totalement transparente et cliquable */
+      transform: scale(1);
       transform-origin: top center;
     }
   </style>
