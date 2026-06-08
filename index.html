@@ -4,12 +4,27 @@
   <meta charset="UTF-8">
   <title>Chaîne CREIA PodEduC</title>
   <style>
-    /* Hauteur étendue pour offrir une grande zone de visualisation */
     html, body { margin: 0; padding: 0; width: 100%; height: 2200px; background-color: #ffffff; }
+    /* Conteneur pour créer une fenêtre de défilement artificielle */
+    .scroll-container { width: 100%; height: 100%; overflow: hidden; }
     iframe { width: 100%; height: 100%; border: none; }
   </style>
 </head>
 <body>
-  <iframe src="https://podeduc.apps.education.fr/creia/#videos" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
+  <div class="scroll-container">
+    <iframe id="pod-iframe" src="https://podeduc.apps.education.fr/creia/" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
+  </div>
+
+  <script>
+    // Attendre 1,2 seconde que PodEduC charge ses éléments, puis descendre automatiquement
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        window.scrollTo({
+          top: 180,
+          behavior: 'smooth'
+        });
+      }, 1200);
+    });
+  </script>
 </body>
 </html>
