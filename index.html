@@ -6,14 +6,14 @@
   <style>
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
-      background-color: #f4f7f6;
+      background-color: #ffffff; /* Fond blanc pour s'intégrer proprement dans l'iframe Magistère */
       color: #333;
-      padding: 0;
+      padding: 10px;
       margin: 0;
     }
     #video-list {
-      max-width: 800px;
-      margin: 20px auto;
+      max-width: 100%;
+      margin: 0 auto;
     }
     .video-item {
       margin-bottom: 30px;
@@ -23,14 +23,14 @@
     }
     .video-title {
       font-weight: bold;
-      font-size: 20px; /* Augmenté de 2 tailles */
+      font-size: 20px; /* Taille augmentée */
       color: #333;
       margin-bottom: 10px;
     }
     .video-link {
       color: #2980b9;
       text-decoration: underline;
-      font-size: 1.1em; /* Augmenté de 2 tailles */
+      font-size: 1.1em; /* Taille augmentée */
     }
     .loading {
       text-align: center;
@@ -47,28 +47,54 @@
   </div>
 
   <script>
-    // URL du flux RSS PodÉduc / Muse à lire (en passant par un proxy pour éviter les blocages CORS)
-    const rssUrl = "https://podeduc.apps.education.fr/feeds/videos/?playlist=TU_AS_LE_CHOIX"; 
+    // METS TON LIEN RSS PODEDUC ENTRE LES GUILLEMETS CI-DESSOUS
+    const rssUrl = "https://podeduc.apps.education.fr/feeds/videos/?playlist=METS_ICI_L_ID_DE_TA_PLAYLIST"; 
+    
+    // Utilisation d'un proxy CORS public et ultra-rapide
     const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(rssUrl);
 
     fetch(proxyUrl)
       .then(response => {
         if (response.ok) return response.json();
-        throw new Error('Erreur réseau');
+        throw new Error('Erreur de réseau');
       })
       .then(data => {
         const parser = new DOMParser();
+        // PodÉduc utilise généralement le format Atom (xml) ou RSS standard
         const xmlDoc = parser.parseFromString(data.contents, "text/xml");
-        const items = xmlDoc.getElementsByTagName("item");
-        const container = document.getElementById("video-list");
-        container.innerHTML = ""; // On vide le message de chargement
+        
+        // Gestion hybride RSS (<item>) et Atom (<entry>) pour être sûr de capter les vidéos
+        let items = xmlDoc.getElementsByTagName("item");
+        let isAtom = false;
+        
+        if (items.length === 0) {
+          items = xmlDoc.getElementsByTagName("entry");
+          isAtom = true;
+        }
 
-        // On prend les 20 dernières vidéos maximum
+        const container = document.getElementById("video-list");
+        container.innerHTML = ""; 
+
+        if (items.length === 0) {
+          container.innerHTML = "<div class='loading'>Aucune vidéo trouvée dans ce flux.</div>";
+          return;
+        }
+
         const limit = Math.min(items.length, 20);
 
         for (let i = 0; i < limit; i++) {
-          const title = items[i].getElementsByTagName("title")[0].textContent;
-          const link = items[i].getElementsByTagName("link")[0].textContent;
+          let title = "";
+          let link = "";
+
+          if (isAtom) {
+            title = items[i].getElementsByTagName("title")[0].textContent;
+            // Dans Atom, le lien est souvent dans un attribut href
+            const linkNode = items[i].getElementsByTagName("link")[0];
+            link = linkNode.getAttribute("href") || linkNode.textContent;
+          } else {
+            title = items[i].getElementsByTagName("title")[0].textContent;
+            link = items[i].getElementsByTagName("link")[0].textContent;
+          }
 
           const videoItem = document.createElement("div");
           videoItem.className = "video-item";
