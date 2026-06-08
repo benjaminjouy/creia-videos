@@ -1,60 +1,91 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 15px; background: #fff; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
-        .card { border: 1px solid #ddd; border-radius: 10px; overflow: hidden; transition: 0.3s; text-decoration: none; color: #333; display: flex; flex-direction: column; background: white; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); border-color: #007bff; }
-        
-        /* Image de fond par défaut (obs2.png) */
-        .thumb { 
-            width: 100%; 
-            aspect-ratio: 16/9; 
-            background: #001529 url('https://podeduc.apps.education.fr/media/files/90b3935df23d511b7f9eca549e1c46f60aa0b67364973a8fab048c60cd92d5c4/obs2.png') no-repeat center center; 
-            background-size: cover;
-            position: relative; 
-        }
-        
-        /* Petit bouton Play au centre */
-        .thumb::after { 
-            content: '▶'; 
-            position: absolute; 
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); 
-            font-size: 40px; color: white; opacity: 0.9;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        .info { padding: 12px; border-top: 1px solid #eee; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .title { font-size: 13px; font-weight: bold; line-height: 1.4; color: #001529; margin-bottom: 8px; }
-        .date { font-size: 11px; color: #666; font-style: italic; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Flux Vidéos CREIA</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #f4f7f6;
+      color: #333;
+      padding: 0;
+      margin: 0;
+    }
+    #video-list {
+      max-width: 800px;
+      margin: 20px auto;
+    }
+    .video-item {
+      margin-bottom: 30px;
+      border-bottom: 1px solid #e2e5ec;
+      padding-bottom: 15px;
+      text-align: center;
+    }
+    .video-title {
+      font-weight: bold;
+      font-size: 20px; /* Augmenté de 2 tailles */
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .video-link {
+      color: #2980b9;
+      text-decoration: underline;
+      font-size: 1.1em; /* Augmenté de 2 tailles */
+    }
+    .loading {
+      text-align: center;
+      font-size: 1.2em;
+      padding: 20px;
+      color: #666;
+    }
+  </style>
 </head>
 <body>
-    <div id="feed" class="grid">Chargement de la chaîne CREIA...</div>
 
-    <script>
-        const RSS_URL = 'https://podeduc.apps.education.fr/rss-video/creia/';
-        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`)
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === 'ok') {
-                    let html = '';
-                    data.items.forEach(item => {
-                        html += `
-                            <a href="${item.link}" target="_blank" class="card">
-                                <div class="thumb"></div>
-                                <div class="info">
-                                    <div class="title">${item.title}</div>
-                                    <div class="date">📅 Publié le ${new Date(item.pubDate).toLocaleDateString()}</div>
-                                </div>
-                            </a>`;
-                    });
-                    document.getElementById('feed').innerHTML = html;
-                }
-            });
-    </script>
+  <div id="video-list">
+    <div class="loading">Chargement des dernières vidéos...</div>
+  </div>
+
+  <script>
+    // URL du flux RSS PodÉduc / Muse à lire (en passant par un proxy pour éviter les blocages CORS)
+    const rssUrl = "https://podeduc.apps.education.fr/feeds/videos/?playlist=TU_AS_LE_CHOIX"; 
+    const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(rssUrl);
+
+    fetch(proxyUrl)
+      .then(response => {
+        if (response.ok) return response.json();
+        throw new Error('Erreur réseau');
+      })
+      .then(data => {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+        const items = xmlDoc.getElementsByTagName("item");
+        const container = document.getElementById("video-list");
+        container.innerHTML = ""; // On vide le message de chargement
+
+        // On prend les 20 dernières vidéos maximum
+        const limit = Math.min(items.length, 20);
+
+        for (let i = 0; i < limit; i++) {
+          const title = items[i].getElementsByTagName("title")[0].textContent;
+          const link = items[i].getElementsByTagName("link")[0].textContent;
+
+          const videoItem = document.createElement("div");
+          videoItem.className = "video-item";
+          if (i === limit - 1) videoItem.style.borderBottom = "none";
+
+          videoItem.innerHTML = `
+            <p class="video-title">${title}</p>
+            <a class="video-link" href="${link}" target="_blank" rel="noopener">Regarder la vidéo</a>
+          `;
+          container.appendChild(videoItem);
+        }
+      })
+      .catch(error => {
+        document.getElementById("video-list").innerHTML = "<div class='loading'>Impossible de charger les vidéos pour le moment.</div>";
+        console.error(error);
+      });
+  </script>
+
 </body>
 </html>
