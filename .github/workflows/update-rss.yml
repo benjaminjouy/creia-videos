@@ -8,6 +8,8 @@ on:
 jobs:
   update-feed:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Force l'exécution sous Node.js 24 pour faire disparaître l'avertissement
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
