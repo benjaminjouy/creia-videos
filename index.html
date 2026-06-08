@@ -4,15 +4,49 @@
   <meta charset="UTF-8">
   <title>Flux Vidéos CREIA</title>
   <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ffffff; color: #333; padding: 10px; margin: 0; }
-    #video-list { max-width: 100%; margin: 0 auto; }
-    .video-item { margin-bottom: 30px; border-bottom: 1px solid #e2e5ec; padding-bottom: 15px; text-align: center; }
-    .video-title { font-weight: bold; font-size: 20px; color: #333; margin-bottom: 10px; }
-    .video-link { color: #2980b9; text-decoration: underline; font-size: 1.1em; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #ffffff;
+      color: #333;
+      padding: 15px;
+      margin: 0;
+    }
+    .video-container {
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    .video-item {
+      margin-bottom: 25px;
+      border-bottom: 1px solid #e2e5ec;
+      padding-bottom: 20px;
+      text-align: center;
+    }
+    .video-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .video-title {
+      font-weight: bold;
+      font-size: 20px;
+      color: #2c3e50;
+      margin: 0 0 12px 0;
+      line-height: 1.4;
+    }
+    .video-link {
+      color: #2980b9;
+      text-decoration: underline;
+      font-size: 1.1em;
+      font-weight: 500;
+      display: inline-block;
+    }
+    .video-link:hover {
+      color: #3498db;
+    }
   </style>
 </head>
 <body>
-  <div id="video-list">
+  <div class="video-container">
     <div class="video-item">
       <p class="video-title">PodEduc - CREIA</p>
       <a class="video-link" href="https://podeduc.apps.education.fr/creia/" target="_blank" rel="noopener">Regarder la vidéo</a>
