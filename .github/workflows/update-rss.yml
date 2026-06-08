@@ -1,4 +1,20 @@
-- name: Fetch RSS Feed and Build HTML Players
+name: Update CREIA RSS Feed
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-feed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          sparse-checkout: .
+
+      - name: Fetch RSS Feed and Build HTML Players
         run: |
           curl -sL "https://podeduc.apps.education.fr/rss-video/creia/" > flux.xml
           
@@ -10,11 +26,9 @@
             <title>Flux Vidéo CREIA</title>
             <style>
               body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #ffffff; color: #333; padding: 0; margin: 0; }
-              /* Conteneur étendu au maximum (100%) */
               .video-container { width: 100%; max-width: 100%; margin: 0; }
               .video-item { text-align: center; }
               .video-title { font-weight: bold; font-size: 18px; margin: 0 0 15px 0; color: #2c3e50; line-height: 1.4; text-align: center; }
-              /* Wrapper configuré pour le plein écran */
               .player-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; width: 100%; background: #000; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
               .player-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
             </style>
@@ -25,7 +39,6 @@
 
           csplit -s -k -f item_ flux.xml '/<item>/' '{*}' 2>/dev/null || true
 
-          # Compteur pour ne prendre que la première vidéo valide
           video_count=0
 
           for f in item_*; do
@@ -48,7 +61,6 @@
                     </div>
                   </div>
           EOF
-                  # On passe le compteur à 1 pour ignorer les vidéos suivantes
                   video_count=$((video_count + 1))
                 fi
               fi
@@ -62,3 +74,10 @@
           </body>
           </html>
           EOF
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "actions@github.com"
+          git add index.html
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Lecteurs autonomes embarques complets" && git push)
