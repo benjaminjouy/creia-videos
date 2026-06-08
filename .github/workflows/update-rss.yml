@@ -40,15 +40,11 @@ jobs:
                   const link = linkMatch[1].trim();
 
                   if (title !== "PodEduC" && title !== "PodEduC - CREIA") {
-                    const urlParts = link.replace(/\/$/, '').split('/');
-                    const videoId = urlParts[urlParts.length - 1];
-                    const thumbUrl = `https://podeduc.apps.education.fr/media/thumbnails/${videoId}.png`;
-
-                    /* Ajout du rel="opener" pour forcer la sortie de l'iframe Magistère */
+                    /* Remplacement de la vignette bloquée par un visuel stylisé CREIA */
                     videoCardsHtml += `
             <a class="video-card" href="${link}" target="_blank" rel="opener">
               <div class="thumbnail-wrapper">
-                <img src="${thumbUrl}" onerror="this.src='https://podeduc.apps.education.fr/static/core/img/logo-pod.png'" alt="Vignette">
+                <div class="play-button">▶</div>
               </div>
               <div class="video-info">
                 <p class="video-title">${title}</p>
@@ -63,28 +59,30 @@ jobs:
           <head>
             <meta charset="UTF-8">
             <title>Chaîne CREIA</title>
-            <!-- Force TOUS les liens à casser l'iframe pour s'ouvrir dehors -->
             <base target="_blank">
             <style>
               body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #ffffff; color: #333; padding: 10px; margin: 0; }
               .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 100%; margin: 0 auto; }
-              .video-card { background: #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.2s; display: flex; flex-direction: column; }
-              .video-card:hover { transform: translateY(-4px); }
-              .thumbnail-wrapper { position: relative; width: 100%; padding-bottom: 56.25%; background: #eceff1; }
-              .thumbnail-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-              .video-info { padding: 12px; flex-grow: 1; display: flex; align-items: center; justify-content: center; }
+              .video-card { background: #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.2s; display: flex; flex-direction: column; border: 1px solid #eef2f5; }
+              .video-card:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0,123,255,0.15); }
+              /* Fond dégradé dynamique CREIA pour remplacer la vignette manquante */
+              .thumbnail-wrapper { position: relative; width: 100%; padding-bottom: 56.25%; background: linear-gradient(135deg, #001529 0%, #0056b3 100%); display: flex; align-items: center; justify-content: center; }
+              .play-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; text-indent: 4px; border: 2px solid white; transition: background 0.2s; }
+              .video-card:hover .play-button { background: #007bff; }
+              .video-info { padding: 15px; flex-grow: 1; display: flex; align-items: center; justify-content: center; background: #f8f9fa; }
               .video-title { font-weight: bold; font-size: 14px; margin: 0; color: #2c3e50; line-height: 1.4; text-align: center; }
             </style>
           </head>
           <body>
             <div class="video-grid">
-              ${videoCardsHtml}
+              \${videoCardsHtml}
             </div>
           </body>
           </html>`;
 
-              fs.writeFileSync('index.html', htmlContent);
-              console.log("index.html mis à jour pour casser l'iframe !");
+              // Échappement correct du template string pour Bash
+              fs.writeFileSync('index.html', htmlContent.replace('\\${videoCardsHtml}', videoCardsHtml));
+              console.log("index.html mis à jour avec visuels CREIA fonctionnels !");
             });
           }).on('error', (e) => {
             console.error(e);
@@ -97,4 +95,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Correction ouverture des onglets cibles" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Integration de vignettes de remplacement CREIA" && git push)
