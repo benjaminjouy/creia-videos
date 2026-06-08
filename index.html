@@ -4,56 +4,111 @@
   <meta charset="UTF-8">
   <title>Flux Vidéos CREIA</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background-color: #ffffff;
-      color: #333;
-      padding: 10px;
-      margin: 0;
-    }
-    #wrapper {
-      max-width: 100%;
-      margin: 0 auto;
-    }
-    /* Style pour forcer l'affichage personnalisé du flux */
-    .rss-feed {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    .rss-item {
-      margin-bottom: 30px !important;
-      border-bottom: 1px solid #e2e5ec !important;
-      padding-bottom: 15px !important;
-      text-align: center !important;
-    }
-    .rss-item:last-child {
-      border-bottom: none !important;
-    }
-    /* Titre de la vidéo agrandi à 20px */
-    .rss-item a.rss-title {
-      font-weight: bold !important;
-      font-size: 20px !important;
-      color: #333 !important;
-      text-decoration: none !important;
-      display: block !important;
-      margin-bottom: 10px !important;
-    }
-    /* Lien d'action sous le titre agrandi à 1.1em */
-    .rss-item .rss-action-link {
-      color: #2980b9 !important;
-      text-decoration: underline !important;
-      font-size: 1.1em !important;
-      display: inline-block !important;
-    }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ffffff; color: #333; padding: 10px; margin: 0; }
+    #video-list { max-width: 100%; margin: 0 auto; }
+    .video-item { margin-bottom: 30px; border-bottom: 1px solid #e2e5ec; padding-bottom: 15px; text-align: center; }
+    .video-title { font-weight: bold; font-size: 20px; color: #333; margin-bottom: 10px; }
+    .video-link { color: #2980b9; text-decoration: underline; font-size: 1.1em; }
   </style>
 </head>
 <body>
-
-  <div id="wrapper">
-    <!-- Générateur de flux direct sans script complexe -->
-    <iframe src="https://feed.mikle.com/widget/v2/162435/" height="800px" width="100%" class="fw-iframe" scrolling="no" frameborder="0"></iframe>
+  <div id="video-list">
+    <div class="video-item">
+      <p class="video-title">PodEduc - CREIA</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/creia/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Les Focus de la CREIA (webinaire) : IA et Éducation, focus sur la recherche, capsule 5min pour comprendre</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/148386-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche-capsule-5min-pour-comprendre/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Les Focus de la CREIA (webinaire) : IA et Éducation, focus sur la recherche, capsule GTNUM IA2GE et Observatoire Grand-Est</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/148384-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche-capsule-gtnum-ia2ge-et-observatoire-grand-est/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Les Focus de la CREIA (webinaire) : IA et Éducation, focus sur la recherche, capsule brochure IA et Education (2026)</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/148366-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche-capsule-brochure-ia-et-education-2026/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Les Focus de la CREIA (webinaire) : IA et Éducation, focus sur la recherche</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/141480-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le Mois de l'IA - Vos actions innovantes avec l'IA, parole à Pascal Mériaux : De l’idée à l’image : lire, écrire et dire avec les IA</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/129330-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-pascal-meriaux-de-lidee-a-limage-lire-ecrire-et-dire-avec-les-ia/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le Mois de l'IA - Vos actions innovantes avec l'IA, parole à Olivier Cornec : Structurer un prompt : démonstration sur Dièse puis sur un LLM</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/129329-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-olivier-cornec-structurer-un-prompt-demonstration-sur-diese-puis-sur-un-llm/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le Mois de l'IA - Vos actions innovantes avec l'IA, parole Christelle Proisy : Comparer des modèles, comprendre les IAG, développer l’esprit critique (et aborder les enjeux écologiques)</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/129325-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-christelle-proisy-comparer-des-modeles-comprendre-les-iag-developper-lesprit-critique-et-aborder-les-enjeux-ecologiques/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le Mois de l'IA - Vos actions innovantes avec l'IA, parole à Charles Poulmaire : NSI : l’IA comme objet informatique et comme outil à interroger</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/129323-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-charles-poulmaire-nsi-lia-comme-objet-informatique-et-comme-outil-a-interroger/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le Mois de l'IA - Vos actions innovantes avec l'IA, parole à Audrey Boisson : Les Sentinelles de la nuit : projet EDD et IA au collège</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/129320-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-audrey-boisson-les-sentinelles-de-la-nuit-projet-edd-et-ia-au-college/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le Mois de l'IA - Vos actions innovantes avec l'IA, parole à Nicolas Bannier : En lettres, enquêter avec l’IA pour former le jugement</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/129314-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-nicolas-bannier-en-lettres-enqueter-avec-lia-pour-former-le-jugement/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le Mois de l'IA - Vos actions innovantes avec l'IA, parole aux enseignants</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/129305-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-aux-enseignants/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le mois de l'IA en académie - Lire, écrire, dire la correction : le professeur et l’IA en tandem (DRANE AURA)</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/129272-le-mois-de-lia-en-academie-lire-ecrire-dire-la-correction-le-professeur-et-lia-en-tandem-drane-aura/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le Mois de l'IA en académie - IA et accessibilité (DRANE Occitanie)</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/129269-le-mois-de-lia-en-academie-ia-et-accessibilite-drane-occitanie/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le Mois de l'IA en académie - L’intelligence artificielle, et si on en parlait en classe ? (DRANE Occitanie)</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/129266-le-mois-de-lia-en-academie-lintelligence-artificielle-et-si-on-en-parlait-en-classe-drane-occitanie/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Le Mois de l'IA - Les Webinaires de la CREIA : Le Café IA</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/121426-le-mois-de-lia-les-webinaires-de-la-creia-le-cafe-ia/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Présentation de l'Observatoire nationale des pratiques pédagogiques avec l'IA</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/117580-presentation-de-lobservatoire-nationale-des-pratiques-pedagogiques-avec-lia/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Les Focus de la CREIA (webinaire) : Mettre en oeuvre le cadre d'usage - DRANE PACA</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/117574-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-drane-paca/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Les Focus de la CREIA (webinaire) : Mettre en oeuvre le cadre d'usage - DRANE OCCITANIE</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/117546-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-drane-occitanie/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Les Focus de la CREIA (webinaire) : Mettre en oeuvre le cadre d'usage - DRANE LYON</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/117540-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-drane-lyon/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">Les Focus de la CREIA (webinaire) : Mettre en oeuvre le cadre d'usage : retour d'expérience académique</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/116666-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-retour-dexperience-academique/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">CREIA webinaire 30-08-24 CC EN.mp4</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/65613-creia-webinaire-30-08-24-cc-enmp4/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">CREIA une heure pour découvrir les agents conversationnels.mp4</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/65180-creia-une-heure-pour-decouvrir-les-agents-conversationnelsmp4/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
+    <div class="video-item">
+      <p class="video-title">CREIA conférence de Bastien Masse sur l'IA en éducation 02-10-2024.mp4</p>
+      <a class="video-link" href="https://podeduc.apps.education.fr/video/64732-creia-conference-de-bastien-masse-sur-lia-en-education-02-10-2024mp4/" target="_blank" rel="noopener">Regarder la vidéo</a>
+    </div>
   </div>
-
 </body>
 </html>
