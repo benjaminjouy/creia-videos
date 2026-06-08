@@ -14,65 +14,69 @@ jobs:
         with:
           sparse-checkout: .
 
-      - name: Fetch and Filter RSS Feed with Python
+      - name: Fetch RSS Feed and Build HTML Players
         run: |
-          cat << 'EOF' > parse_feed.py
-          import urllib.request
-          import xml.etree.ElementTree as ET
-
-          url = "https://podeduc.apps.education.fr/rss-video/creia/"
+          curl -sL "https://podeduc.apps.education.fr/rss-video/creia/" > flux.xml
           
-          rss_template = """<?xml version="1.0" encoding="UTF-8" ?>
-          <rss version="2.0">
-          <channel>
-            <title>Chaîne Vidéo CREIA</title>
-            <link>https://benjaminjouy.github.io/creia-videos/</link>
-            <description>Les dernières vidéos de la communauté CREIA</description>
-          """
-
-          try:
-              response = urllib.request.urlopen(url)
-              root = ET.fromstring(response.read())
-              
-              items_count = 0
-              items_xml = ""
-              
-              for item in root.findall('.//item'):
-                  if items_count >= 8: # On bloque strictement à 8 vidéos
-                      break
-                      
-                  title = item.find('title')
-                  link = item.find('link')
-                  
-                  if title is not None and link is not None:
-                      t_text = title.text.replace("<![CDATA[", "").replace("]]>", "").strip()
-                      l_text = link.text.replace("<![CDATA[", "").replace("]]>", "").strip()
-                      
-                      # On ignore les titres globaux de la chaîne
-                      if t_text in ["PodEduC", "PodEduC - CREIA", "PodEduC  CREIA"]:
-                          continue
-                      
-                      items_xml += f"""    <item>
-                <title>{t_text}</title>
-                <link>{l_text}</link>
-                <description>{t_text}</description>
-              </item>\n"""
-                      items_count += 1
-                      
-              full_rss = rss_template + items_xml + "  </channel>\n</rss>"
-              
-              with open("flux.xml", "w", encoding="utf-8") as f:
-                  f.write(full_rss)
-                  
-          except Exception as e:
-              print(f"Erreur: {e}")
+          cat << 'EOF' > index.html
+          <!DOCTYPE html>
+          <html lang="fr">
+          <head>
+            <meta charset="UTF-8">
+            <title>Flux Vidéos CREIA</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #ffffff; color: #333; padding: 10px; margin: 0; }
+              .video-container { max-width: 760px; margin: 0 auto; }
+              .video-item { margin-bottom: 45px; border-bottom: 1px solid #eee; padding-bottom: 30px; text-align: center; }
+              .video-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+              .video-title { font-weight: bold; font-size: 16px; margin: 0 0 15px 0; color: #2c3e50; line-height: 1.4; text-align: center; }
+              .player-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+              .player-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+            </style>
+          </head>
+          <body>
+            <div class="video-container">
           EOF
-          python3 parse_feed.py
-          rm parse_feed.py
+
+          csplit -s -k -f item_ flux.xml '/<item>/' '{*}' 2>/dev/null || true
+
+          for f in item_*; do
+            if [ -f "$f" ]; then
+              title=$(grep -oP '(?<=<title>).*?(?=</title>)' "$f" | head -n 1)
+              link=$(grep -oP '(?<=<link>).*?(?=</link>)' "$f" | head -n 1)
+
+              if [ ! -z "$title" ] && [ ! -z "$link" ]; then
+                clean_title=$(echo "$title" | sed 's/<!\[CDATA\[//g' | sed 's/\]\]>//g')
+                clean_link=$(echo "$link" | sed 's/<!\[CDATA\[//g' | sed 's/\]\]>//g')
+                
+                if [ "$clean_title" != "PodEduC" ] && [ "$clean_title" != "PodEduC - CREIA" ]; then
+                  # Transformation structurelle : /video/ID-nom/ devient /video/embed/ID-nom/
+                  embed_link=$(echo "$clean_link" | sed 's|/video/|/video/embed/|')
+
+                  cat << EOF >> index.html
+                  <div class="video-item">
+                    <p class="video-title">${clean_title}</p>
+                    <div class="player-wrapper">
+                      <iframe src="${embed_link}" allowfullscreen transparency allow="autoplay; fullscreen"></iframe>
+                    </div>
+                  </div>
+          EOF
+                fi
+              fi
+            fi
+          done
+
+          rm -f item_* flux.xml
+
+          cat << 'EOF' >> index.html
+            </div>
+          </body>
+          </html>
+          EOF
 
       - name: Commit and Push changes
         run: |
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
-          git add flux.xml
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Mise à jour du flux RSS épuré" && git push)
+          git add index.html
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Lecteurs autonomes embarques complets" && git push)
