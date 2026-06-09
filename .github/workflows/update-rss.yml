@@ -123,4 +123,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Suppression définitive du fond bleu" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Nettoyage warning et mise à jour design" && git push)
