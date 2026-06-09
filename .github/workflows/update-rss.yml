@@ -35,6 +35,7 @@ jobs:
                 const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/);
                 const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/);
                 
+                // Expression régulière bcp plus large pour attraper pubDate, dc:date ou updated
                 const dateMatch = item.match(/<(?:pubDate|dc:date|updated|date)[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/(?:pubDate|dc:date|updated|date)>/i);
 
                 if (titleMatch && linkMatch) {
@@ -55,6 +56,7 @@ jobs:
                 }
               });
 
+              // Tri par ordre de récence
               videoList.sort((a, b) => b.pubDate - a.pubDate);
 
               let videoCardsHtml = '';
@@ -68,6 +70,7 @@ jobs:
                   formattedDate = `${day}/${month}/${year}`;
                 }
 
+                // Ajout direct de la date dans le titre ou juste en dessous et intégration de la miniature + bouton rouge
                 videoCardsHtml += `
             <a class="video-card" href="${video.link}" target="_blank" rel="opener">
               <div class="thumbnail-wrapper" style="background: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg') center/cover no-repeat;">
@@ -123,4 +126,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Mise à jour miniature et couleur boutons" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Application miniature personnalisée et boutons rouges" && git push)
