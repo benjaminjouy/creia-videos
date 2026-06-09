@@ -35,7 +35,6 @@ jobs:
                 const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/);
                 const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/);
                 
-                // Expression régulière bcp plus large pour attraper pubDate, dc:date ou updated
                 const dateMatch = item.match(/<(?:pubDate|dc:date|updated|date)[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/(?:pubDate|dc:date|updated|date)>/i);
 
                 if (titleMatch && linkMatch) {
@@ -56,7 +55,6 @@ jobs:
                 }
               });
 
-              // Tri par ordre de récence
               videoList.sort((a, b) => b.pubDate - a.pubDate);
 
               let videoCardsHtml = '';
@@ -70,13 +68,12 @@ jobs:
                   formattedDate = `${day}/${month}/${year}`;
                 }
 
-                // Ajout direct de la date dans le titre ou juste en dessous
                 videoCardsHtml += `
             <a class="video-card" href="${video.link}" target="_blank" rel="opener">
-              <div class="thumbnail-wrapper">
+              <div class="thumbnail-wrapper" style="background: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg') center/cover no-repeat;">
                 <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.3"/>
-                  <polygon points="40,30 70,50 40,70" fill="#ffffff" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
+                  <polygon points="40,30 70,50 40,70" fill="#ff0000" />
                 </svg>
               </div>
               <div class="video-info">
@@ -98,7 +95,7 @@ jobs:
           '    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 100%; margin: 0 auto; }\n' +
           '    .video-card { background: #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.2s; display: flex; flex-direction: column; border: 1px solid #eef2f5; }\n' +
           '    .video-card:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0,123,255,0.15); }\n' +
-          '    .thumbnail-wrapper { position: relative; width: 100%; padding-bottom: 56.25%; background: linear-gradient(135deg, #001529 0%, #0056b3 100%); overflow: hidden; display: flex; align-items: center; justify-content: center; }\n' +
+          '    .thumbnail-wrapper { position: relative; width: 100%; padding-bottom: 56.25%; overflow: hidden; display: flex; align-items: center; justify-content: center; }\n' +
           '    .pod-logo-svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; transition: transform 0.2s; }\n' +
           '    .video-card:hover .pod-logo-svg { transform: translate(-50%, -50%) scale(1.1); }\n' +
           '    .video-info { padding: 15px; flex-grow: 1; display: flex; align-items: center; justify-content: center; background: #f8f9fa; min-height: 80px; text-align: center; }\n' +
@@ -113,7 +110,7 @@ jobs:
               const finalHtml = htmlHeader + videoCardsHtml + htmlFooter;
 
               fs.writeFileSync('index.html', finalHtml);
-              console.log("index.html mis à jour avec détection de date robuste.");
+              console.log("index.html mis à jour avec miniatures personnalisées et boutons rouges.");
             });
           }).on('error', (e) => {
             console.error(e);
@@ -126,4 +123,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Robustesse de la date et injection dans le titre" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Mise à jour miniature et couleur boutons" && git push)
