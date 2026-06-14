@@ -14,7 +14,7 @@ jobs:
         with:
           sparse-checkout: .
 
-      - name: Fetch RSS Feed, Sort by Date and Build Grid (Node.js)
+      - name: Fetch RSS Feed, Categorize and Build Grid (Node.js)
         run: |
           node - << 'EOF'
           const fs = require('fs');
@@ -34,7 +34,6 @@ jobs:
               items.forEach(item => {
                 const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/);
                 const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/);
-                
                 const dateMatch = item.match(/<(?:pubDate|dc:date|updated|date)[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/(?:pubDate|dc:date|updated|date)>/i);
 
                 if (titleMatch && linkMatch) {
@@ -49,8 +48,24 @@ jobs:
                     }
                   }
 
+                  // Tri par mots-clés pour l'attribution des catégories
+                  let category = 'tous';
+                  const lowerTitle = title.toLowerCase();
+                  
+                  if (lowerTitle.match(/webinaire|conference|synthese|direct/)) {
+                    category = 'webinaire';
+                  } else if (lowerTitle.match(/recherche|gtnum|chercheur|theorie|eclairage/)) {
+                    category = 'recherche';
+                  } else if (lowerTitle.match(/tuto|developper|outil|prompt|guider|comment/)) {
+                    category = 'tutoriel';
+                  } else if (lowerTitle.match(/drane|terrain|classe|temoignage|pratique/)) {
+                    category = 'pratique';
+                  } else {
+                    category = 'tutoriel';
+                  }
+
                   if (title !== "PodEduC" && title !== "PodEduC - CREIA") {
-                    videoList.push({ title, link, pubDate });
+                    videoList.push({ title, link, pubDate, category });
                   }
                 }
               });
@@ -69,7 +84,7 @@ jobs:
                 }
 
                 videoCardsHtml += `
-            <a class="video-card" href="${video.link}" target="_blank" rel="opener">
+            <a class="video-card" href="${video.link}" target="_blank" rel="opener" data-category="${video.category}">
               <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
                 <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -92,6 +107,9 @@ jobs:
           '  <base target="_blank">\n' +
           '  <style>\n' +
           '    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #ffffff; color: #333; padding: 10px; margin: 0; }\n' +
+          '    .filter-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }\n' +
+          '    .filter-btn { background: #f4f7f6; color: #2c3e50; border: 2px solid #e2e5ec; padding: 8px 18px; font-weight: bold; font-size: 13px; border-radius: 20px; cursor: pointer; transition: 0.2s; }\n' +
+          '    .filter-btn:hover, .filter-btn.active { background: #0b1a3d; color: #fff; border-color: #4169E1; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }\n' +
           '    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 100%; margin: 0 auto; }\n' +
           '    .video-card { background: #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.2s; display: flex; flex-direction: column; border: 1px solid #eef2f5; }\n' +
           '    .video-card:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0,123,255,0.15); }\n' +
@@ -104,13 +122,38 @@ jobs:
           '  </style>\n' +
           '</head>\n' +
           '<body>\n' +
+          '  <div class="filter-container">\n' +
+          '    <button class="filter-btn active" onclick="filterVideos(\'tous\')">✨ Tout voir</button>\n' +
+          '    <button class="filter-btn" onclick="filterVideos(\'webinaire\')">🎙️ Webinaires</button>\n' +
+          '    <button class="filter-btn" onclick="filterVideos(\'recherche\')">💡 Recherche</button>\n' +
+          '    <button class="filter-btn" onclick="filterVideos(\'toriel\')">🛠️ Capsules &amp; Tutos</button>\n' +
+          '    <button class="filter-btn" onclick="filterVideos(\'pratique\')">🏫 Retours de terrain</button>\n' +
+          '  </div>\n' +
           '  <div class="video-grid">\n';
 
-              const htmlFooter = '\n  </div>\n</body>\n</html>';
+              const htmlFooter = '\n  </div>\n' +
+          '  <script>\n' +
+          '    function filterVideos(cat) {\n' +
+          '      const cards = document.querySelectorAll(".video-card");\n' +
+          '      const btns = document.querySelectorAll(".filter-btn");\n' +
+          '      btns.forEach(b => b.classList.remove("active"));\n' +
+          '      event.currentTarget.classList.add("active");\n' +
+          '      cards.forEach(card => {\n' +
+          '        if(cat === "tous" || card.getAttribute("data-category") === cat || (cat === "toriel" && card.getAttribute("data-category") === "tutoriel")) {\n' +
+          '          card.style.display = "flex";\n' +
+          '        } else {\n' +
+          '          card.style.display = "none";\n' +
+          '        }\n' +
+          '      });\n' +
+          '    }\n' +
+          '  </script>\n' +
+          '</body>\n' +
+          '</html>';
+          
               const finalHtml = htmlHeader + videoCardsHtml + htmlFooter;
 
               fs.writeFileSync('index.html', finalHtml);
-              console.log("index.html mis à jour sans dégradé bleu.");
+              console.log("index.html mis à jour avec catégories et dates conservées.");
             });
           }).on('error', (e) => {
             console.error(e);
@@ -123,4 +166,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Nettoyage warning et mise à jour design" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Nettoyage warning, mise à jour design et intégration des catégories avec dates" && git push)
