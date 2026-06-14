@@ -6,9 +6,6 @@
   <base target="_blank">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #ffffff; color: #333; padding: 10px; margin: 0; }
-    .filter-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
-    .filter-btn { background: #f4f7f6; color: #2c3e50; border: 2px solid #e2e5ec; padding: 8px 18px; font-weight: bold; font-size: 13px; border-radius: 20px; cursor: pointer; transition: 0.2s; }
-    .filter-btn:hover, .filter-btn.active { background: #0b1a3d; color: #fff; border-color: #4169E1; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
     .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 100%; margin: 0 auto; }
     .video-card { background: #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.2s; display: flex; flex-direction: column; border: 1px solid #eef2f5; }
     .video-card:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0,123,255,0.15); }
@@ -21,16 +18,9 @@
   </style>
 </head>
 <body>
-  <div class="filter-container">
-    <button class="filter-btn active" onclick="filterVideos('tous')">✨ Tout Voir</button>
-    <button class="filter-btn" onclick="filterVideos('webinaire')">🎙️ Webinaire</button>
-    <button class="filter-btn" onclick="filterVideos('mois-ia')">📅 Mois de l'IA</button>
-    <button class="filter-btn" onclick="filterVideos('innov')">🚀 Actions Innovantes</button>
-    <button class="filter-btn" onclick="filterVideos('autres')">📂 Autres</button>
-  </div>
   <div class="video-grid">
 
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/148386-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche-capsule-5min-pour-comprendre/" target="_blank" rel="opener" data-category="webinaire">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/148386-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche-capsule-5min-pour-comprendre/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -43,7 +33,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/148384-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche-capsule-gtnum-ia2ge-et-observatoire-grand-est/" target="_blank" rel="opener" data-category="webinaire">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/148384-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche-capsule-gtnum-ia2ge-et-observatoire-grand-est/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -56,7 +46,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/148366-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche-capsule-brochure-ia-et-education-2026/" target="_blank" rel="opener" data-category="webinaire">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/148366-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche-capsule-brochure-ia-et-education-2026/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -69,7 +59,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/141480-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche/" target="_blank" rel="opener" data-category="webinaire">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/141480-les-focus-de-la-creia-webinaire-ia-et-education-focus-sur-la-recherche/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -82,7 +72,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/129330-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-pascal-meriaux-de-lidee-a-limage-lire-ecrire-et-dire-avec-les-ia/" target="_blank" rel="opener" data-category="mois-ia innov">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/129330-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-pascal-meriaux-de-lidee-a-limage-lire-ecrire-et-dire-avec-les-ia/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -95,7 +85,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/129329-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-olivier-cornec-structurer-un-prompt-demonstration-sur-diese-puis-sur-un-llm/" target="_blank" rel="opener" data-category="mois-ia innov">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/129329-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-olivier-cornec-structurer-un-prompt-demonstration-sur-diese-puis-sur-un-llm/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -108,7 +98,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/129325-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-christelle-proisy-comparer-des-modeles-comprendre-les-iag-developper-lesprit-critique-et-aborder-les-enjeux-ecologiques/" target="_blank" rel="opener" data-category="mois-ia innov">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/129325-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-christelle-proisy-comparer-des-modeles-comprendre-les-iag-developper-lesprit-critique-et-aborder-les-enjeux-ecologiques/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -121,7 +111,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/129323-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-charles-poulmaire-nsi-lia-comme-objet-informatique-et-comme-outil-a-interroger/" target="_blank" rel="opener" data-category="mois-ia innov">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/129323-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-charles-poulmaire-nsi-lia-comme-objet-informatique-et-comme-outil-a-interroger/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -134,7 +124,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/129320-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-audrey-boisson-les-sentinelles-de-la-nuit-projet-edd-et-ia-au-college/" target="_blank" rel="opener" data-category="mois-ia innov">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/129320-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-audrey-boisson-les-sentinelles-de-la-nuit-projet-edd-et-ia-au-college/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -147,7 +137,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/129314-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-nicolas-bannier-en-lettres-enqueter-avec-lia-pour-former-le-jugement/" target="_blank" rel="opener" data-category="mois-ia innov">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/129314-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-a-nicolas-bannier-en-lettres-enqueter-avec-lia-pour-former-le-jugement/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -160,7 +150,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/129305-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-aux-enseignants/" target="_blank" rel="opener" data-category="mois-ia innov">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/129305-le-mois-de-lia-vos-actions-innovantes-avec-lia-parole-aux-enseignants/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -173,7 +163,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/129272-le-mois-de-lia-en-academie-lire-ecrire-dire-la-correction-le-professeur-et-lia-en-tandem-drane-aura/" target="_blank" rel="opener" data-category="mois-ia">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/129272-le-mois-de-lia-en-academie-lire-ecrire-dire-la-correction-le-professeur-et-lia-en-tandem-drane-aura/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -186,7 +176,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/129269-le-mois-de-lia-en-academie-ia-et-accessibilite-drane-occitanie/" target="_blank" rel="opener" data-category="mois-ia">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/129269-le-mois-de-lia-en-academie-ia-et-accessibilite-drane-occitanie/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -199,7 +189,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/129266-le-mois-de-lia-en-academie-lintelligence-artificielle-et-si-on-en-parlait-en-classe-drane-occitanie/" target="_blank" rel="opener" data-category="mois-ia">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/129266-le-mois-de-lia-en-academie-lintelligence-artificielle-et-si-on-en-parlait-en-classe-drane-occitanie/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -212,7 +202,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/121426-le-mois-de-lia-les-webinaires-de-la-creia-le-cafe-ia/" target="_blank" rel="opener" data-category="webinaire mois-ia">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/121426-le-mois-de-lia-les-webinaires-de-la-creia-le-cafe-ia/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -225,7 +215,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/117580-presentation-de-lobservatoire-nationale-des-pratiques-pedagogiques-avec-lia/" target="_blank" rel="opener" data-category="autres">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/117580-presentation-de-lobservatoire-nationale-des-pratiques-pedagogiques-avec-lia/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -238,7 +228,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/117574-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-drane-paca/" target="_blank" rel="opener" data-category="webinaire">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/117574-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-drane-paca/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -251,7 +241,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/117546-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-drane-occitanie/" target="_blank" rel="opener" data-category="webinaire">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/117546-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-drane-occitanie/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -264,7 +254,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/117540-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-drane-lyon/" target="_blank" rel="opener" data-category="webinaire">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/117540-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-drane-lyon/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -277,7 +267,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/116666-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-retour-dexperience-academique/" target="_blank" rel="opener" data-category="webinaire">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/116666-les-focus-de-la-creia-webinaire-mettre-en-oeuvre-le-cadre-dusage-retour-dexperience-academique/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -290,7 +280,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/65613-creia-webinaire-30-08-24-cc-enmp4/" target="_blank" rel="opener" data-category="webinaire">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/65613-creia-webinaire-30-08-24-cc-enmp4/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -303,7 +293,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/65180-creia-une-heure-pour-decouvrir-les-agents-conversationnelsmp4/" target="_blank" rel="opener" data-category="autres">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/65180-creia-une-heure-pour-decouvrir-les-agents-conversationnelsmp4/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -316,7 +306,7 @@
       </div>
     </div>
   </a>
-  <a class="video-card" href="https://podeduc.apps.education.fr/video/64732-creia-conference-de-bastien-masse-sur-lia-en-education-02-10-2024mp4/" target="_blank" rel="opener" data-category="autres">
+  <a class="video-card" href="https://podeduc.apps.education.fr/video/64732-creia-conference-de-bastien-masse-sur-lia-en-education-02-10-2024mp4/" target="_blank" rel="opener">
     <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
       <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -330,21 +320,5 @@
     </div>
   </a>
   </div>
-  <script>
-    function filterVideos(cat) {
-      const cards = document.querySelectorAll(".video-card");
-      const btns = document.querySelectorAll(".filter-btn");
-      btns.forEach(b => b.classList.remove("active"));
-      event.currentTarget.classList.add("active");
-      cards.forEach(card => {
-        const cardCats = card.getAttribute("data-category").split(" ");
-        if(cat === "tous" || cardCats.includes(cat)) {
-          card.style.display = "flex";
-        } else {
-          card.style.display = "none";
-        }
-      });
-    }
-  </script>
 </body>
 </html>
