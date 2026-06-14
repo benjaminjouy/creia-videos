@@ -14,7 +14,7 @@ jobs:
         with:
           sparse-checkout: .
 
-      - name: Fetch RSS Feed, Categorize and Build Grid (Node.js)
+      - name: Fetch RSS Feed, Categorize Multi-criteria and Build Grid (Node.js)
         run: |
           node - << 'EOF'
           const fs = require('fs');
@@ -48,24 +48,27 @@ jobs:
                     }
                   }
 
-                  // Tri par mots-clés pour l'attribution des catégories
-                  let category = 'tous';
+                  // Attribution multi-catégories sous forme de tableau
+                  const categories = [];
                   const lowerTitle = title.toLowerCase();
                   
-                  if (lowerTitle.match(/webinaire|conference|synthese|direct/)) {
-                    category = 'webinaire';
-                  } else if (lowerTitle.match(/recherche|gtnum|chercheur|theorie|eclairage/)) {
-                    category = 'recherche';
-                  } else if (lowerTitle.match(/tuto|developper|outil|prompt|guider|comment/)) {
-                    category = 'tutoriel';
-                  } else if (lowerTitle.match(/drane|terrain|classe|temoignage|pratique/)) {
-                    category = 'pratique';
-                  } else {
-                    category = 'tutoriel';
+                  if (lowerTitle.match(/webinaire|conference|direct/)) {
+                    categories.push('webinaire');
+                  }
+                  if (lowerTitle.match(/mois/)) {
+                    categories.push('mois-ia');
+                  }
+                  if (lowerTitle.match(/innov|projet|experimentation/)) {
+                    categories.push('innov');
+                  }
+                  
+                  // Si aucun mot-clé ne match, la vidéo va dans "Autres"
+                  if (categories.length === 0) {
+                    categories.push('autres');
                   }
 
                   if (title !== "PodEduC" && title !== "PodEduC - CREIA") {
-                    videoList.push({ title, link, pubDate, category });
+                    videoList.push({ title, link, pubDate, categories });
                   }
                 }
               });
@@ -83,8 +86,11 @@ jobs:
                   formattedDate = `${day}/${month}/${year}`;
                 }
 
+                // Jointure des catégories dans l'attribut data-category séparées par des espaces
+                const catString = video.categories.join(' ');
+
                 videoCardsHtml += `
-            <a class="video-card" href="${video.link}" target="_blank" rel="opener" data-category="${video.category}">
+            <a class="video-card" href="${video.link}" target="_blank" rel="opener" data-category="${catString}">
               <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
                 <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
@@ -123,11 +129,11 @@ jobs:
           '</head>\n' +
           '<body>\n' +
           '  <div class="filter-container">\n' +
-          '    <button class="filter-btn active" onclick="filterVideos(\'tous\')">✨ Tout voir</button>\n' +
-          '    <button class="filter-btn" onclick="filterVideos(\'webinaire\')">🎙️ Webinaires</button>\n' +
-          '    <button class="filter-btn" onclick="filterVideos(\'recherche\')">💡 Recherche</button>\n' +
-          '    <button class="filter-btn" onclick="filterVideos(\'toriel\')">🛠️ Capsules &amp; Tutos</button>\n' +
-          '    <button class="filter-btn" onclick="filterVideos(\'pratique\')">🏫 Retours de terrain</button>\n' +
+          '    <button class="filter-btn active" onclick="filterVideos(\'tous\')">✨ Tout Voir</button>\n' +
+          '    <button class="filter-btn" onclick="filterVideos(\'webinaire\')">🎙️ Webinaire</button>\n' +
+          '    <button class="filter-btn" onclick="filterVideos(\'mois-ia\')">📅 Mois de l\'IA</button>\n' +
+          '    <button class="filter-btn" onclick="filterVideos(\'innov\')">🚀 Actions Innovantes</button>\n' +
+          '    <button class="filter-btn" onclick="filterVideos(\'autres\')">📂 Autres</button>\n' +
           '  </div>\n' +
           '  <div class="video-grid">\n';
 
@@ -139,7 +145,8 @@ jobs:
           '      btns.forEach(b => b.classList.remove("active"));\n' +
           '      event.currentTarget.classList.add("active");\n' +
           '      cards.forEach(card => {\n' +
-          '        if(cat === "tous" || card.getAttribute("data-category") === cat || (cat === "toriel" && card.getAttribute("data-category") === "tutoriel")) {\n' +
+          '        const cardCats = card.getAttribute("data-category").split(" ");\n' +
+          '        if(cat === "tous" || cardCats.includes(cat)) {\n' +
           '          card.style.display = "flex";\n' +
           '        } else {\n' +
           '          card.style.display = "none";\n' +
@@ -153,7 +160,7 @@ jobs:
               const finalHtml = htmlHeader + videoCardsHtml + htmlFooter;
 
               fs.writeFileSync('index.html', finalHtml);
-              console.log("index.html mis à jour avec catégories et dates conservées.");
+              console.log("index.html mis à jour avec le système multi-catégories filtrable.");
             });
           }).on('error', (e) => {
             console.error(e);
@@ -166,4 +173,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Nettoyage warning, mise à jour design et intégration des catégories avec dates" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Mise à jour des boutons et du filtrage multi-critères" && git push)
