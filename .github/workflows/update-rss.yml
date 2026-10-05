@@ -16,16 +16,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
 
-      - name: Fetch RSS, thumbnails and build page
+      - name: Fetch RSS, thumbnails, categories and build page
         run: |
           node - << 'EOF'
+
           const fs = require('fs');
           const https = require('https');
 
-          const rssUrl = "https://podeduc.apps.education.fr/rss-video/creia/";
+          const rssUrl =
+            "https://podeduc.apps.education.fr/rss-video/creia/";
 
           const fallbackImage =
             "https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg";
+
+
+          /* =====================================================
+             OUTILS
+          ===================================================== */
 
           function decodeHtml(str = "") {
             return str
@@ -44,7 +51,20 @@ jobs:
               .replace(/"/g, "&quot;");
           }
 
+          function normalize(str = "") {
+            return str
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "");
+          }
+
+
+          /* =====================================================
+             REQUETE HTTPS
+          ===================================================== */
+
           function get(url) {
+
             return new Promise((resolve, reject) => {
 
               const request = https.get(
@@ -52,19 +72,19 @@ jobs:
                 {
                   headers: {
                     "User-Agent":
-                      "Mozilla/5.0 CREIA-GitHub-Feed-Updater/1.0",
+                      "Mozilla/5.0 CREIA-GitHub-Feed-Updater/2.0",
                     "Accept":
                       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
                   }
                 },
                 res => {
 
-                  /* Gestion des redirections */
                   if (
                     res.statusCode >= 300 &&
                     res.statusCode < 400 &&
                     res.headers.location
                   ) {
+
                     const redirected =
                       new URL(res.headers.location, url).href;
 
@@ -82,12 +102,15 @@ jobs:
                     res.statusCode < 200 ||
                     res.statusCode >= 300
                   ) {
+
                     res.resume();
+
                     reject(
                       new Error(
                         `HTTP ${res.statusCode} pour ${url}`
                       )
                     );
+
                     return;
                   }
 
@@ -115,9 +138,9 @@ jobs:
           }
 
 
-          /* =============================================
-             RECHERCHE DE LA MINIATURE
-          ============================================= */
+          /* =====================================================
+             MINIATURE PODEDUC
+          ===================================================== */
 
           async function getThumbnail(videoUrl) {
 
@@ -157,19 +180,13 @@ jobs:
                 }
               }
 
-              console.log(
-                "⚠️ Aucune miniature trouvée :",
-                videoUrl
-              );
-
               return fallbackImage;
 
             } catch (error) {
 
               console.log(
-                "⚠️ Erreur miniature :",
-                videoUrl,
-                error.message
+                "Miniature de secours pour :",
+                videoUrl
               );
 
               return fallbackImage;
@@ -177,20 +194,157 @@ jobs:
           }
 
 
-          /* =============================================
-             RSS
-          ============================================= */
+          /* =====================================================
+             CLASSEMENT AUTOMATIQUE
+          ===================================================== */
+
+          function classifyVideo(title) {
+
+            const t = normalize(title);
+
+            /*
+              P2IA est prioritaire.
+            */
+
+            if (t.includes("p2ia")) {
+
+              let subcategory = "P2IA";
+
+              if (
+                t.includes("mathematique") ||
+                t.includes("maths")
+              ) {
+                subcategory = "P2IA • Mathématiques";
+              }
+
+              else if (
+                t.includes("francais") ||
+                t.includes("lettres")
+              ) {
+                subcategory = "P2IA • Français";
+              }
+
+              else if (
+                t.includes("langues vivantes") ||
+                t.includes("anglais") ||
+                t.includes("espagnol") ||
+                t.includes("allemand")
+              ) {
+                subcategory = "P2IA • Langues vivantes";
+              }
+
+              return {
+                category: "p2ia",
+                label: subcategory
+              };
+            }
+
+
+            /*
+              RECHERCHE & OBSERVATOIRE
+            */
+
+            if (
+              t.includes("observatoire") ||
+              t.includes("recherche") ||
+              t.includes("gtnum")
+            ) {
+
+              return {
+                category: "recherche",
+                label: "Recherche & Observatoire"
+              };
+            }
+
+
+            /*
+              CADRE & TERRITOIRES
+            */
+
+            if (
+              t.includes("cadre d'usage") ||
+              t.includes("cadre d’usage") ||
+              t.includes("drane") ||
+              t.includes("academie")
+            ) {
+
+              return {
+                category: "cadre",
+                label: "Cadre & territoires"
+              };
+            }
+
+
+            /*
+              OUTILS & RESSOURCES
+            */
+
+            if (
+              t.includes("prompt") ||
+              t.includes("diese") ||
+              t.includes("outil") ||
+              t.includes("ressource")
+            ) {
+
+              return {
+                category: "outils",
+                label: "Outils & ressources"
+              };
+            }
+
+
+            /*
+              COMPRENDRE L'IA
+            */
+
+            if (
+              t.includes("comprendre") ||
+              t.includes("conference") ||
+              t.includes("agents conversationnels") ||
+              t.includes("enjeux de l'ia") ||
+              t.includes("enjeux de lia")
+            ) {
+
+              return {
+                category: "comprendre",
+                label: "Comprendre l'IA"
+              };
+            }
+
+
+            /*
+              PAR DEFAUT
+            */
+
+            return {
+              category: "pratiques",
+              label: "Pratiques pédagogiques"
+            };
+          }
+
+
+          /* =====================================================
+             PROGRAMME PRINCIPAL
+          ===================================================== */
 
           async function main() {
 
-            console.log("Téléchargement du RSS CREIA…");
+            console.log(
+              "Téléchargement du RSS CREIA..."
+            );
 
             const data = await get(rssUrl);
 
             const items = data.split("<item>");
+
             items.shift();
 
             const videoList = [];
+
+
+            /* =================================================
+               LECTURE DU RSS
+            ================================================= */
 
             for (const item of items) {
 
@@ -209,15 +363,22 @@ jobs:
                   /<(?:pubDate|dc:date|updated|date)[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/(?:pubDate|dc:date|updated|date)>/i
                 );
 
+
               if (!titleMatch || !linkMatch) {
                 continue;
               }
 
+
               const title =
-                decodeHtml(titleMatch[1].trim());
+                decodeHtml(
+                  titleMatch[1].trim()
+                );
 
               const link =
-                decodeHtml(linkMatch[1].trim());
+                decodeHtml(
+                  linkMatch[1].trim()
+                );
+
 
               if (
                 title === "PodEduC" ||
@@ -227,43 +388,66 @@ jobs:
                 continue;
               }
 
-              let pubDate = new Date(0);
 
-              if (dateMatch && dateMatch[1]) {
+              let pubDate =
+                new Date(0);
+
+
+              if (
+                dateMatch &&
+                dateMatch[1]
+              ) {
 
                 const parsedDate =
-                  new Date(dateMatch[1].trim());
+                  new Date(
+                    dateMatch[1].trim()
+                  );
 
-                if (!isNaN(parsedDate.getTime())) {
-                  pubDate = parsedDate;
+                if (
+                  !isNaN(
+                    parsedDate.getTime()
+                  )
+                ) {
+                  pubDate =
+                    parsedDate;
                 }
               }
 
+
               console.log("");
-              console.log("🎬", title);
-              console.log("   Recherche miniature…");
+              console.log("Vidéo :", title);
+
 
               const thumbnail =
                 await getThumbnail(link);
 
+
+              const classification =
+                classifyVideo(title);
+
+
               console.log(
-                thumbnail === fallbackImage
-                  ? "   ↳ image de secours"
-                  : "   ↳ miniature trouvée : " + thumbnail
+                "Catégorie :",
+                classification.label
               );
+
 
               videoList.push({
                 title,
                 link,
                 pubDate,
-                thumbnail
+                thumbnail,
+                category:
+                  classification.category,
+                categoryLabel:
+                  classification.label
               });
             }
 
 
-            /* =============================================
-               TRI
-            ============================================= */
+            /* =================================================
+               TRI PAR DATE
+            ================================================= */
 
             videoList.sort(
               (a, b) =>
@@ -272,20 +456,35 @@ jobs:
             );
 
 
-            /* =============================================
+            /* =================================================
                VIDEOS.JSON
-            ============================================= */
+            ================================================= */
 
             const jsonOutput =
               videoList.map(video => ({
-                title: video.title,
-                url: video.link,
+
+                title:
+                  video.title,
+
+                url:
+                  video.link,
+
                 date:
                   video.pubDate.getTime() !== 0
                     ? video.pubDate.toISOString()
                     : "",
-                thumbnail: video.thumbnail
+
+                thumbnail:
+                  video.thumbnail,
+
+                category:
+                  video.category,
+
+                categoryLabel:
+                  video.categoryLabel
+
               }));
+
 
             fs.writeFileSync(
               "videos.json",
@@ -297,17 +496,21 @@ jobs:
             );
 
 
-            /* =============================================
-               CARTES HTML
-            ============================================= */
+            /* =================================================
+               CARTES VIDEOS
+            ================================================= */
 
             let videoCardsHtml = "";
+
 
             for (const video of videoList) {
 
               let formattedDate = "";
 
-              if (video.pubDate.getTime() !== 0) {
+
+              if (
+                video.pubDate.getTime() !== 0
+              ) {
 
                 const day =
                   String(
@@ -326,6 +529,7 @@ jobs:
                   `${day}/${month}/${year}`;
               }
 
+
               const title =
                 escapeHtml(video.title);
 
@@ -335,47 +539,58 @@ jobs:
               const thumbnail =
                 escapeHtml(video.thumbnail);
 
+              const badge =
+                escapeHtml(
+                  video.categoryLabel
+                );
+
+
               videoCardsHtml += `
-            <a class="video-card"
-               href="${link}"
-               target="_blank"
-               rel="noopener">
 
-              <div class="thumbnail-wrapper">
+              <a
+                class="video-card"
+                data-category="${video.category}"
+                href="${link}"
+                target="_blank"
+                rel="noopener">
 
-                <img
-                  class="thumbnail-image"
-                  src="${thumbnail}"
-                  alt=""
-                  loading="lazy"
-                  referrerpolicy="no-referrer"
-                  onerror="this.onerror=null;this.src='${fallbackImage}';">
+                <div class="thumbnail-wrapper">
 
-                <svg
-                  class="pod-logo-svg"
-                  viewBox="0 0 100 100"
-                  xmlns="http://www.w3.org/2000/svg">
+                  <img
+                    class="thumbnail-image"
+                    src="${thumbnail}"
+                    alt=""
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                    onerror="this.onerror=null;this.src='${fallbackImage}';">
 
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="rgba(255,255,255,0.85)"
-                    stroke="#ff0000"
-                    stroke-width="6"
-                    opacity="0.95"/>
+                  <div class="category-badge">
+                    ${badge}
+                  </div>
 
-                  <polygon
-                    points="40,30 70,50 40,70"
-                    fill="#ff0000"/>
+                  <svg
+                    class="pod-logo-svg"
+                    viewBox="0 0 100 100"
+                    xmlns="http://www.w3.org/2000/svg">
 
-                </svg>
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="rgba(255,255,255,0.88)"
+                      stroke="#ff0000"
+                      stroke-width="6"/>
 
-              </div>
+                    <polygon
+                      points="40,30 70,50 40,70"
+                      fill="#ff0000"/>
 
-              <div class="video-info">
+                  </svg>
 
-                <div>
+                </div>
+
+
+                <div class="video-info">
 
                   <p class="video-title">
 
@@ -391,17 +606,18 @@ jobs:
 
                 </div>
 
-              </div>
+              </a>
 
-            </a>`;
+              `;
             }
 
 
-            /* =============================================
+            /* =================================================
                PAGE HTML
-            ============================================= */
+            ================================================= */
 
             const htmlHeader = `<!DOCTYPE html>
+
           <html lang="fr">
 
           <head>
@@ -412,156 +628,621 @@ jobs:
               name="viewport"
               content="width=device-width, initial-scale=1.0">
 
-            <title>Chaîne CREIA</title>
+            <title>Chaîne vidéo CREIA</title>
 
             <base target="_blank">
 
+
             <style>
 
+              * {
+                box-sizing: border-box;
+              }
+
+
               body {
+
                 font-family:
                   -apple-system,
                   BlinkMacSystemFont,
                   "Segoe UI",
                   Roboto,
+                  Arial,
                   sans-serif;
 
-                background-color: #ffffff;
+                background: #ffffff;
+
                 color: #333;
+
                 padding: 10px;
+
                 margin: 0;
+
               }
 
+
+              /* ============================
+                 FILTRES
+              ============================ */
+
+              .filters {
+
+                display: flex;
+
+                flex-wrap: wrap;
+
+                justify-content: center;
+
+                gap: 9px;
+
+                margin:
+                  0 auto 25px auto;
+
+                max-width: 1100px;
+
+              }
+
+
+              .filter-btn {
+
+                appearance: none;
+
+                border:
+                  2px solid #4169E1;
+
+                background:
+                  #ffffff;
+
+                color:
+                  #0b1a3d;
+
+                border-radius:
+                  999px;
+
+                padding:
+                  9px 15px;
+
+                font-size:
+                  12px;
+
+                font-weight:
+                  700;
+
+                cursor:
+                  pointer;
+
+                transition:
+                  all 0.2s ease;
+
+              }
+
+
+              .filter-btn:hover {
+
+                background:
+                  #eef3ff;
+
+                transform:
+                  translateY(-1px);
+
+              }
+
+
+              .filter-btn.active {
+
+                background:
+                  #0b1a3d;
+
+                color:
+                  #ffffff;
+
+                border-color:
+                  #4169E1;
+
+              }
+
+
+              /* ============================
+                 GRILLE
+              ============================ */
+
               .video-grid {
+
                 display: grid;
+
                 grid-template-columns:
                   repeat(
                     auto-fill,
                     minmax(280px, 1fr)
                   );
+
                 gap: 20px;
+
                 width: 100%;
+
                 margin: 0 auto;
+
               }
 
+
+              /* ============================
+                 CARTE
+              ============================ */
+
               .video-card {
-                background: #ffffff;
-                border-radius: 8px;
+
+                background:
+                  #ffffff;
+
+                border-radius:
+                  10px;
+
                 box-shadow:
-                  0 4px 10px rgba(0,0,0,0.08);
-                overflow: hidden;
-                text-decoration: none;
-                color: inherit;
+                  0 4px 10px
+                  rgba(0,0,0,0.08);
+
+                overflow:
+                  hidden;
+
+                text-decoration:
+                  none;
+
+                color:
+                  inherit;
+
                 transition:
                   transform 0.2s,
                   box-shadow 0.2s;
-                display: flex;
-                flex-direction: column;
-                border: 1px solid #eef2f5;
+
+                display:
+                  flex;
+
+                flex-direction:
+                  column;
+
+                border:
+                  1px solid #eef2f5;
+
               }
+
 
               .video-card:hover {
-                transform: translateY(-4px);
+
+                transform:
+                  translateY(-4px);
+
                 box-shadow:
-                  0 6px 15px
-                  rgba(0,123,255,0.15);
+                  0 7px 18px
+                  rgba(0,123,255,0.16);
+
               }
+
+
+              .video-card.hidden {
+
+                display: none;
+
+              }
+
+
+              /* ============================
+                 MINIATURE
+              ============================ */
 
               .thumbnail-wrapper {
-                position: relative;
-                width: 100%;
-                aspect-ratio: 16 / 9;
-                background: #1a1a1a;
-                overflow: hidden;
+
+                position:
+                  relative;
+
+                width:
+                  100%;
+
+                aspect-ratio:
+                  16 / 9;
+
+                background:
+                  #1a1a1a;
+
+                overflow:
+                  hidden;
+
               }
+
 
               .thumbnail-image {
-                position: absolute;
-                inset: 0;
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                display: block;
+
+                position:
+                  absolute;
+
+                inset:
+                  0;
+
+                width:
+                  100%;
+
+                height:
+                  100%;
+
+                object-fit:
+                  cover;
+
+                display:
+                  block;
+
               }
 
+
+              /* ============================
+                 BADGE
+              ============================ */
+
+              .category-badge {
+
+                position:
+                  absolute;
+
+                z-index:
+                  3;
+
+                top:
+                  10px;
+
+                left:
+                  10px;
+
+                max-width:
+                  calc(100% - 20px);
+
+                padding:
+                  6px 10px;
+
+                border-radius:
+                  999px;
+
+                background:
+                  rgba(11,26,61,0.92);
+
+                color:
+                  #ffffff;
+
+                font-size:
+                  11px;
+
+                font-weight:
+                  800;
+
+                line-height:
+                  1.2;
+
+                box-shadow:
+                  0 2px 6px
+                  rgba(0,0,0,0.25);
+
+              }
+
+
+              /* ============================
+                 BOUTON PLAY
+              ============================ */
+
               .pod-logo-svg {
-                position: absolute;
-                z-index: 2;
-                top: 50%;
-                left: 50%;
+
+                position:
+                  absolute;
+
+                z-index:
+                  2;
+
+                top:
+                  50%;
+
+                left:
+                  50%;
+
                 transform:
                   translate(-50%, -50%);
-                width: 70px;
-                height: 70px;
+
+                width:
+                  68px;
+
+                height:
+                  68px;
+
                 transition:
                   transform 0.2s;
+
                 filter:
                   drop-shadow(
-                    0 2px 4px
+                    0 2px 5px
                     rgba(0,0,0,0.35)
                   );
+
               }
+
 
               .video-card:hover
               .pod-logo-svg {
+
                 transform:
                   translate(-50%, -50%)
                   scale(1.1);
+
               }
+
+
+              /* ============================
+                 TEXTE
+              ============================ */
 
               .video-info {
-                padding: 15px;
-                flex-grow: 1;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: #f8f9fa;
-                min-height: 80px;
-                text-align: center;
+
+                padding:
+                  15px;
+
+                flex-grow:
+                  1;
+
+                display:
+                  flex;
+
+                align-items:
+                  center;
+
+                justify-content:
+                  center;
+
+                background:
+                  #f8f9fa;
+
+                min-height:
+                  80px;
+
+                text-align:
+                  center;
+
               }
+
 
               .video-title {
-                font-weight: bold;
-                font-size: 14px;
-                margin: 0;
-                color: #2c3e50;
-                line-height: 1.4;
+
+                font-weight:
+                  bold;
+
+                font-size:
+                  14px;
+
+                margin:
+                  0;
+
+                color:
+                  #2c3e50;
+
+                line-height:
+                  1.4;
+
               }
 
+
               .title-date {
-                font-size: 12px;
-                color: #7f8c8d;
-                font-weight: normal;
-                margin-left: 5px;
-                display: inline-block;
+
+                font-size:
+                  12px;
+
+                color:
+                  #7f8c8d;
+
+                font-weight:
+                  normal;
+
+                margin-left:
+                  5px;
+
+                display:
+                  inline-block;
+
+              }
+
+
+              @media
+              (max-width: 600px) {
+
+                .video-grid {
+
+                  grid-template-columns:
+                    1fr;
+
+                }
+
+                .filter-btn {
+
+                  font-size:
+                    11px;
+
+                  padding:
+                    8px 11px;
+
+                }
+
               }
 
             </style>
 
           </head>
 
+
           <body>
 
+
+            <div class="filters">
+
+              <button
+                class="filter-btn active"
+                data-filter="all">
+                ✨ Toutes
+              </button>
+
+              <button
+                class="filter-btn"
+                data-filter="p2ia">
+                🚀 P2IA
+              </button>
+
+              <button
+                class="filter-btn"
+                data-filter="pratiques">
+                🎓 Pratiques pédagogiques
+              </button>
+
+              <button
+                class="filter-btn"
+                data-filter="comprendre">
+                🧠 Comprendre l'IA
+              </button>
+
+              <button
+                class="filter-btn"
+                data-filter="outils">
+                🛠️ Outils & ressources
+              </button>
+
+              <button
+                class="filter-btn"
+                data-filter="cadre">
+                🏫 Cadre & territoires
+              </button>
+
+              <button
+                class="filter-btn"
+                data-filter="recherche">
+                🔭 Recherche & Observatoire
+              </button>
+
+            </div>
+
+
             <div class="video-grid">
+
           `;
 
+
             const htmlFooter = `
+
             </div>
+
+
+            <script>
+
+              const buttons =
+                document.querySelectorAll(
+                  ".filter-btn"
+                );
+
+              const cards =
+                document.querySelectorAll(
+                  ".video-card"
+                );
+
+
+              buttons.forEach(button => {
+
+                button.addEventListener(
+                  "click",
+                  event => {
+
+                    /*
+                      Empêche <base target="_blank">
+                      d'avoir un effet sur le bouton.
+                    */
+
+                    event.preventDefault();
+
+
+                    const filter =
+                      button.dataset.filter;
+
+
+                    buttons.forEach(btn => {
+                      btn.classList.remove(
+                        "active"
+                      );
+                    });
+
+
+                    button.classList.add(
+                      "active"
+                    );
+
+
+                    cards.forEach(card => {
+
+                      if (
+                        filter === "all" ||
+                        card.dataset.category === filter
+                      ) {
+
+                        card.classList.remove(
+                          "hidden"
+                        );
+
+                      }
+
+                      else {
+
+                        card.classList.add(
+                          "hidden"
+                        );
+
+                      }
+
+                    });
+
+
+                    /*
+                      Informe éventuellement Magistère
+                      de la nouvelle hauteur.
+                    */
+
+                    setTimeout(() => {
+
+                      window.parent.postMessage(
+                        {
+                          type:
+                            "creia-filter-change",
+
+                          height:
+                            document.documentElement
+                              .scrollHeight
+                        },
+                        "*"
+                      );
+
+                    }, 100);
+
+                  }
+                );
+
+              });
+
+            </script>
+
 
           </body>
 
           </html>
           `;
 
+
             const finalHtml =
               htmlHeader +
               videoCardsHtml +
               htmlFooter;
 
+
             fs.writeFileSync(
               "index.html",
               finalHtml
             );
+
 
             console.log("");
             console.log(
@@ -569,12 +1250,21 @@ jobs:
             );
 
             console.log(
-              "✅ index.html créé."
+              "✅ Miniatures récupérées."
             );
 
             console.log(
-              "✅ videos.json créé avec les miniatures."
+              "✅ Catégories attribuées."
             );
+
+            console.log(
+              "✅ videos.json créé."
+            );
+
+            console.log(
+              "✅ index.html créé avec filtres."
+            );
+
           }
 
 
@@ -602,6 +1292,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "Aucune modification."
           else
-            git commit -m "Mise à jour automatique CREIA avec miniatures"
+            git commit -m "Ajout catégories et filtres vidéos CREIA"
             git push
           fi
