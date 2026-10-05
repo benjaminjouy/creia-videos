@@ -5,16 +5,18 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   update-feed:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
-        with:
-          sparse-checkout: .
 
-      - name: Fetch RSS Feed, Sort by Date and Build Grid (Node.js)
+      - name: Fetch RSS, thumbnails and build page
         run: |
           node - << 'EOF'
           const fs = require('fs');
@@ -22,105 +24,584 @@ jobs:
 
           const rssUrl = "https://podeduc.apps.education.fr/rss-video/creia/";
 
-          https.get(rssUrl, (res) => {
-            let data = '';
-            res.on('data', (chunk) => { data += chunk; });
-            res.on('end', () => {
-              const items = data.split('<item>');
-              items.shift(); 
+          const fallbackImage =
+            "https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg";
 
-              const videoList = [];
+          function decodeHtml(str = "") {
+            return str
+              .replace(/&amp;/g, "&")
+              .replace(/&quot;/g, '"')
+              .replace(/&#39;/g, "'")
+              .replace(/&lt;/g, "<")
+              .replace(/&gt;/g, ">");
+          }
 
-              items.forEach(item => {
-                const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/);
-                const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/);
-                
-                const dateMatch = item.match(/<(?:pubDate|dc:date|updated|date)[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/(?:pubDate|dc:date|updated|date)>/i);
+          function escapeHtml(str = "") {
+            return str
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;");
+          }
 
-                if (titleMatch && linkMatch) {
-                  const title = titleMatch[1].trim();
-                  const link = linkMatch[1].trim();
-                  
-                  let pubDate = new Date(0);
-                  if (dateMatch && dateMatch[1]) {
-                    const parsedDate = new Date(dateMatch[1].trim());
-                    if (!isNaN(parsedDate.getTime())) {
-                      pubDate = parsedDate;
-                    }
+          function get(url) {
+            return new Promise((resolve, reject) => {
+
+              const request = https.get(
+                url,
+                {
+                  headers: {
+                    "User-Agent":
+                      "Mozilla/5.0 CREIA-GitHub-Feed-Updater/1.0",
+                    "Accept":
+                      "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+                  }
+                },
+                res => {
+
+                  /* Gestion des redirections */
+                  if (
+                    res.statusCode >= 300 &&
+                    res.statusCode < 400 &&
+                    res.headers.location
+                  ) {
+                    const redirected =
+                      new URL(res.headers.location, url).href;
+
+                    res.resume();
+
+                    get(redirected)
+                      .then(resolve)
+                      .catch(reject);
+
+                    return;
                   }
 
-                  if (title !== "PodEduC" && title !== "PodEduC - CREIA") {
-                    videoList.push({ title, link, pubDate });
+                  if (
+                    !res.statusCode ||
+                    res.statusCode < 200 ||
+                    res.statusCode >= 300
+                  ) {
+                    res.resume();
+                    reject(
+                      new Error(
+                        `HTTP ${res.statusCode} pour ${url}`
+                      )
+                    );
+                    return;
                   }
+
+                  let data = "";
+
+                  res.on("data", chunk => {
+                    data += chunk;
+                  });
+
+                  res.on("end", () => {
+                    resolve(data);
+                  });
                 }
+              );
+
+              request.on("error", reject);
+
+              request.setTimeout(20000, () => {
+                request.destroy(
+                  new Error("Timeout pour " + url)
+                );
               });
 
-              videoList.sort((a, b) => b.pubDate - a.pubDate);
-
-              let videoCardsHtml = '';
-
-              videoList.forEach(video => {
-                let formattedDate = "";
-                if (video.pubDate.getTime() !== 0) {
-                  const day = String(video.pubDate.getDate()).padStart(2, '0');
-                  const month = String(video.pubDate.getMonth() + 1).padStart(2, '0');
-                  const year = video.pubDate.getFullYear();
-                  formattedDate = `${day}/${month}/${year}`;
-                }
-
-                videoCardsHtml += `
-            <a class="video-card" href="${video.link}" target="_blank" rel="opener">
-              <div class="thumbnail-wrapper" style="background-image: url('https://partage02.magistere.apps.education.fr/pluginfile.php/512678/mod_page/content/12/66e4c716-930d-42aa-964c-e58db2653422.jpg');">
-                <svg class="pod-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#ff0000" stroke-width="6" opacity="0.4"/>
-                  <polygon points="40,30 70,50 40,70" fill="#ff0000" />
-                </svg>
-              </div>
-              <div class="video-info">
-                <div>
-                  <p class="video-title">${video.title} ${formattedDate ? `<span class="title-date">(${formattedDate})</span>` : ''}</p>
-                </div>
-              </div>
-            </a>`;
-              });
-
-              const htmlHeader = '<!DOCTYPE html>\n' +
-          '<html lang="fr">\n' +
-          '<head>\n' +
-          '  <meta charset="UTF-8">\n' +
-          '  <title>Chaîne CREIA</title>\n' +
-          '  <base target="_blank">\n' +
-          '  <style>\n' +
-          '    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #ffffff; color: #333; padding: 10px; margin: 0; }\n' +
-          '    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 100%; margin: 0 auto; }\n' +
-          '    .video-card { background: #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.2s; display: flex; flex-direction: column; border: 1px solid #eef2f5; }\n' +
-          '    .video-card:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0,123,255,0.15); }\n' +
-          '    .thumbnail-wrapper { position: relative; width: 100%; padding-bottom: 56.25%; background-color: #1a1a1a; background-size: cover; background-position: center; background-repeat: no-repeat; overflow: hidden; display: flex; align-items: center; justify-content: center; }\n' +
-          '    .pod-logo-svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; transition: transform 0.2s; }\n' +
-          '    .video-card:hover .pod-logo-svg { transform: translate(-50%, -50%) scale(1.1); }\n' +
-          '    .video-info { padding: 15px; flex-grow: 1; display: flex; align-items: center; justify-content: center; background: #f8f9fa; min-height: 80px; text-align: center; }\n' +
-          '    .video-title { font-weight: bold; font-size: 14px; margin: 0; color: #2c3e50; line-height: 1.4; }\n' +
-          '    .title-date { font-size: 12px; color: #7f8c8d; font-weight: normal; margin-left: 5px; display: inline-block; }\n' +
-          '  </style>\n' +
-          '</head>\n' +
-          '<body>\n' +
-          '  <div class="video-grid">\n';
-
-              const htmlFooter = '\n  </div>\n</body>\n</html>';
-              const finalHtml = htmlHeader + videoCardsHtml + htmlFooter;
-
-              fs.writeFileSync('index.html', finalHtml);
-              console.log("index.html mis à jour sans dégradé bleu.");
             });
-          }).on('error', (e) => {
-            console.error(e);
+          }
+
+
+          /* =============================================
+             RECHERCHE DE LA MINIATURE
+          ============================================= */
+
+          async function getThumbnail(videoUrl) {
+
+            try {
+
+              const html = await get(videoUrl);
+
+              const patterns = [
+
+                /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+
+                /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["'][^>]*>/i,
+
+                /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+
+                /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["'][^>]*>/i,
+
+                /<meta[^>]+itemprop=["']thumbnailUrl["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+
+                /poster=["']([^"']+)["']/i
+
+              ];
+
+              for (const pattern of patterns) {
+
+                const match = html.match(pattern);
+
+                if (match && match[1]) {
+
+                  let thumbnail =
+                    decodeHtml(match[1].trim());
+
+                  thumbnail =
+                    new URL(thumbnail, videoUrl).href;
+
+                  return thumbnail;
+                }
+              }
+
+              console.log(
+                "⚠️ Aucune miniature trouvée :",
+                videoUrl
+              );
+
+              return fallbackImage;
+
+            } catch (error) {
+
+              console.log(
+                "⚠️ Erreur miniature :",
+                videoUrl,
+                error.message
+              );
+
+              return fallbackImage;
+            }
+          }
+
+
+          /* =============================================
+             RSS
+          ============================================= */
+
+          async function main() {
+
+            console.log("Téléchargement du RSS CREIA…");
+
+            const data = await get(rssUrl);
+
+            const items = data.split("<item>");
+            items.shift();
+
+            const videoList = [];
+
+            for (const item of items) {
+
+              const titleMatch =
+                item.match(
+                  /<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i
+                );
+
+              const linkMatch =
+                item.match(
+                  /<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i
+                );
+
+              const dateMatch =
+                item.match(
+                  /<(?:pubDate|dc:date|updated|date)[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/(?:pubDate|dc:date|updated|date)>/i
+                );
+
+              if (!titleMatch || !linkMatch) {
+                continue;
+              }
+
+              const title =
+                decodeHtml(titleMatch[1].trim());
+
+              const link =
+                decodeHtml(linkMatch[1].trim());
+
+              if (
+                title === "PodEduC" ||
+                title === "PodEduC - CREIA" ||
+                !link.includes("/video/")
+              ) {
+                continue;
+              }
+
+              let pubDate = new Date(0);
+
+              if (dateMatch && dateMatch[1]) {
+
+                const parsedDate =
+                  new Date(dateMatch[1].trim());
+
+                if (!isNaN(parsedDate.getTime())) {
+                  pubDate = parsedDate;
+                }
+              }
+
+              console.log("");
+              console.log("🎬", title);
+              console.log("   Recherche miniature…");
+
+              const thumbnail =
+                await getThumbnail(link);
+
+              console.log(
+                thumbnail === fallbackImage
+                  ? "   ↳ image de secours"
+                  : "   ↳ miniature trouvée : " + thumbnail
+              );
+
+              videoList.push({
+                title,
+                link,
+                pubDate,
+                thumbnail
+              });
+            }
+
+
+            /* =============================================
+               TRI
+            ============================================= */
+
+            videoList.sort(
+              (a, b) =>
+                b.pubDate.getTime() -
+                a.pubDate.getTime()
+            );
+
+
+            /* =============================================
+               VIDEOS.JSON
+            ============================================= */
+
+            const jsonOutput =
+              videoList.map(video => ({
+                title: video.title,
+                url: video.link,
+                date:
+                  video.pubDate.getTime() !== 0
+                    ? video.pubDate.toISOString()
+                    : "",
+                thumbnail: video.thumbnail
+              }));
+
+            fs.writeFileSync(
+              "videos.json",
+              JSON.stringify(
+                jsonOutput,
+                null,
+                2
+              )
+            );
+
+
+            /* =============================================
+               CARTES HTML
+            ============================================= */
+
+            let videoCardsHtml = "";
+
+            for (const video of videoList) {
+
+              let formattedDate = "";
+
+              if (video.pubDate.getTime() !== 0) {
+
+                const day =
+                  String(
+                    video.pubDate.getUTCDate()
+                  ).padStart(2, "0");
+
+                const month =
+                  String(
+                    video.pubDate.getUTCMonth() + 1
+                  ).padStart(2, "0");
+
+                const year =
+                  video.pubDate.getUTCFullYear();
+
+                formattedDate =
+                  `${day}/${month}/${year}`;
+              }
+
+              const title =
+                escapeHtml(video.title);
+
+              const link =
+                escapeHtml(video.link);
+
+              const thumbnail =
+                escapeHtml(video.thumbnail);
+
+              videoCardsHtml += `
+            <a class="video-card"
+               href="${link}"
+               target="_blank"
+               rel="noopener">
+
+              <div class="thumbnail-wrapper">
+
+                <img
+                  class="thumbnail-image"
+                  src="${thumbnail}"
+                  alt=""
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  onerror="this.onerror=null;this.src='${fallbackImage}';">
+
+                <svg
+                  class="pod-logo-svg"
+                  viewBox="0 0 100 100"
+                  xmlns="http://www.w3.org/2000/svg">
+
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="rgba(255,255,255,0.85)"
+                    stroke="#ff0000"
+                    stroke-width="6"
+                    opacity="0.95"/>
+
+                  <polygon
+                    points="40,30 70,50 40,70"
+                    fill="#ff0000"/>
+
+                </svg>
+
+              </div>
+
+              <div class="video-info">
+
+                <div>
+
+                  <p class="video-title">
+
+                    ${title}
+
+                    ${
+                      formattedDate
+                        ? `<span class="title-date">(${formattedDate})</span>`
+                        : ""
+                    }
+
+                  </p>
+
+                </div>
+
+              </div>
+
+            </a>`;
+            }
+
+
+            /* =============================================
+               PAGE HTML
+            ============================================= */
+
+            const htmlHeader = `<!DOCTYPE html>
+          <html lang="fr">
+
+          <head>
+
+            <meta charset="UTF-8">
+
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0">
+
+            <title>Chaîne CREIA</title>
+
+            <base target="_blank">
+
+            <style>
+
+              body {
+                font-family:
+                  -apple-system,
+                  BlinkMacSystemFont,
+                  "Segoe UI",
+                  Roboto,
+                  sans-serif;
+
+                background-color: #ffffff;
+                color: #333;
+                padding: 10px;
+                margin: 0;
+              }
+
+              .video-grid {
+                display: grid;
+                grid-template-columns:
+                  repeat(
+                    auto-fill,
+                    minmax(280px, 1fr)
+                  );
+                gap: 20px;
+                width: 100%;
+                margin: 0 auto;
+              }
+
+              .video-card {
+                background: #ffffff;
+                border-radius: 8px;
+                box-shadow:
+                  0 4px 10px rgba(0,0,0,0.08);
+                overflow: hidden;
+                text-decoration: none;
+                color: inherit;
+                transition:
+                  transform 0.2s,
+                  box-shadow 0.2s;
+                display: flex;
+                flex-direction: column;
+                border: 1px solid #eef2f5;
+              }
+
+              .video-card:hover {
+                transform: translateY(-4px);
+                box-shadow:
+                  0 6px 15px
+                  rgba(0,123,255,0.15);
+              }
+
+              .thumbnail-wrapper {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 16 / 9;
+                background: #1a1a1a;
+                overflow: hidden;
+              }
+
+              .thumbnail-image {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+              }
+
+              .pod-logo-svg {
+                position: absolute;
+                z-index: 2;
+                top: 50%;
+                left: 50%;
+                transform:
+                  translate(-50%, -50%);
+                width: 70px;
+                height: 70px;
+                transition:
+                  transform 0.2s;
+                filter:
+                  drop-shadow(
+                    0 2px 4px
+                    rgba(0,0,0,0.35)
+                  );
+              }
+
+              .video-card:hover
+              .pod-logo-svg {
+                transform:
+                  translate(-50%, -50%)
+                  scale(1.1);
+              }
+
+              .video-info {
+                padding: 15px;
+                flex-grow: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f8f9fa;
+                min-height: 80px;
+                text-align: center;
+              }
+
+              .video-title {
+                font-weight: bold;
+                font-size: 14px;
+                margin: 0;
+                color: #2c3e50;
+                line-height: 1.4;
+              }
+
+              .title-date {
+                font-size: 12px;
+                color: #7f8c8d;
+                font-weight: normal;
+                margin-left: 5px;
+                display: inline-block;
+              }
+
+            </style>
+
+          </head>
+
+          <body>
+
+            <div class="video-grid">
+          `;
+
+            const htmlFooter = `
+            </div>
+
+          </body>
+
+          </html>
+          `;
+
+            const finalHtml =
+              htmlHeader +
+              videoCardsHtml +
+              htmlFooter;
+
+            fs.writeFileSync(
+              "index.html",
+              finalHtml
+            );
+
+            console.log("");
+            console.log(
+              `✅ ${videoList.length} vidéos traitées.`
+            );
+
+            console.log(
+              "✅ index.html créé."
+            );
+
+            console.log(
+              "✅ videos.json créé avec les miniatures."
+            );
+          }
+
+
+          main().catch(error => {
+
+            console.error(
+              "❌ Erreur :",
+              error
+            );
+
             process.exit(1);
+
           });
+
           EOF
+
 
       - name: Commit and Push changes
         run: |
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
-          git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Nettoyage warning et mise à jour design" && git push)
+
+          git add index.html videos.json
+
+          if git diff --staged --quiet; then
+            echo "Aucune modification."
+          else
+            git commit -m "Mise à jour automatique CREIA avec miniatures"
+            git push
+          fi
