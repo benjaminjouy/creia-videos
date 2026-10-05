@@ -1,0 +1,372 @@
+name: Update CREIA Latest Replays
+
+on:
+  schedule:
+    # Mise à jour automatique tous les jours à 7h00 UTC
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-replays:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch CREIA RSS and generate latest replays
+        run: |
+          node - << 'EOF'
+          const fs = require('fs');
+          const https = require('https');
+
+          // Flux RSS officiel des vidéos CREIA sur PodEduc
+          const rssUrl = "https://podeduc.apps.education.fr/rss-video/creia/";
+
+          function fetchUrl(url) {
+            return new Promise((resolve, reject) => {
+              https.get(url, {
+                headers: {
+                  "User-Agent": "Mozilla/5.0"
+                }
+              }, (res) => {
+
+                // Gestion des redirections
+                if (
+                  res.statusCode >= 300 &&
+                  res.statusCode < 400 &&
+                  res.headers.location
+                ) {
+                  return resolve(fetchUrl(res.headers.location));
+                }
+
+                if (res.statusCode !== 200) {
+                  reject(
+                    new Error(
+                      `Erreur HTTP ${res.statusCode} pour ${url}`
+                    )
+                  );
+                  return;
+                }
+
+                let data = "";
+
+                res.on("data", chunk => {
+                  data += chunk;
+                });
+
+                res.on("end", () => {
+                  resolve(data);
+                });
+
+              }).on("error", reject);
+            });
+          }
+
+          function decodeHtml(str) {
+            if (!str) return "";
+
+            return str
+              .replace(/<!\[CDATA\[|\]\]>/g, "")
+              .replace(/&amp;/g, "&")
+              .replace(/&quot;/g, '"')
+              .replace(/&#39;/g, "'")
+              .replace(/&apos;/g, "'")
+              .replace(/&lt;/g, "<")
+              .replace(/&gt;/g, ">");
+          }
+
+          function stripTags(str) {
+            return decodeHtml(str)
+              .replace(/<[^>]*>/g, "")
+              .replace(/\s+/g, " ")
+              .trim();
+          }
+
+          function escapeHtml(str) {
+            return String(str || "")
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#039;");
+          }
+
+          function getTag(item, tag) {
+            const regex = new RegExp(
+              `<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`,
+              "i"
+            );
+
+            const match = item.match(regex);
+
+            return match ? match[1] : "";
+          }
+
+          function getLink(item) {
+
+            // RSS classique
+            let link = getTag(item, "link");
+
+            if (link) {
+              link = decodeHtml(link).trim();
+
+              if (link.startsWith("http")) {
+                return link;
+              }
+            }
+
+            // Atom
+            const atomLink = item.match(
+              /<link[^>]+href=["']([^"']+)["'][^>]*>/i
+            );
+
+            if (atomLink) {
+              return decodeHtml(atomLink[1]);
+            }
+
+            return "";
+          }
+
+          function formatDate(dateString) {
+            const date = new Date(dateString);
+
+            if (isNaN(date.getTime())) {
+              return "";
+            }
+
+            return new Intl.DateTimeFormat("fr-FR", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              timeZone: "Europe/Paris"
+            }).format(date);
+          }
+
+          async function main() {
+
+            console.log("Récupération du flux CREIA...");
+            console.log(rssUrl);
+
+            const xml = await fetchUrl(rssUrl);
+
+            // Récupération des items RSS
+            let items = [
+              ...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)
+            ].map(match => match[0]);
+
+            // Compatibilité Atom si nécessaire
+            if (!items.length) {
+              items = [
+                ...xml.matchAll(/<entry\b[\s\S]*?<\/entry>/gi)
+              ].map(match => match[0]);
+            }
+
+            console.log(
+              `${items.length} éléments trouvés dans le flux.`
+            );
+
+            const videos = items.map(item => {
+
+              const title = stripTags(
+                getTag(item, "title")
+              );
+
+              const link = getLink(item);
+
+              const dateRaw =
+                stripTags(getTag(item, "pubDate")) ||
+                stripTags(getTag(item, "published")) ||
+                stripTags(getTag(item, "updated"));
+
+              const timestamp = new Date(dateRaw).getTime();
+
+              return {
+                title,
+                link,
+                dateRaw,
+                timestamp: isNaN(timestamp) ? 0 : timestamp
+              };
+
+            }).filter(video =>
+              video.title &&
+              video.link
+            );
+
+            // Classement du plus récent au plus ancien
+            videos.sort(
+              (a, b) => b.timestamp - a.timestamp
+            );
+
+            // Seulement les 6 derniers replays
+            const latest = videos.slice(0, 6);
+
+            console.log(
+              `${latest.length} replays conservés.`
+            );
+
+            latest.forEach((video, index) => {
+              console.log(
+                `${index + 1}. ${video.title} - ${formatDate(video.dateRaw)}`
+              );
+            });
+
+            const replayBlocks = latest.map(video => {
+
+              const title = escapeHtml(video.title);
+              const link = escapeHtml(video.link);
+              const date = escapeHtml(
+                formatDate(video.dateRaw)
+              );
+
+              return `
+              <a class="btn btn-light"
+                style="--bs-btn-bg: #f8f9fa;
+                       --bs-btn-border-color: #eeeeee;
+                       --bs-btn-hover-bg: #eef4ff;
+                       --bs-btn-hover-border-color: #b8cdfd;
+                       --bs-btn-active-bg: #e4edff;
+                       --bs-btn-active-border-color: #8baaff;
+                       display: flex;
+                       align-items: center;
+                       gap: 10px;
+                       width: 100%;
+                       min-height: 49px;
+                       text-decoration: none;
+                       color: inherit !important;
+                       padding: 7px 8px;
+                       border-radius: 8px;
+                       box-sizing: border-box;
+                       transition: all 0.25s ease;
+                       box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+                       text-transform: none !important;
+                       letter-spacing: normal !important;"
+                href="${link}"
+                target="_blank"
+                rel="noopener">
+
+                <span
+                  style="pointer-events: none;
+                         display: inline-flex;
+                         align-items: center;
+                         justify-content: center;
+                         flex: 0 0 42px;
+                         width: 42px;
+                         height: 27px;
+                         padding: 0;
+                         border-radius: 5px;
+                         background: linear-gradient(180deg, #3d82f6 0%, #2870e8 100%);
+                         border: 1px solid #2f75e8;
+                         box-shadow: 0 2px 5px rgba(65,105,225,0.35);
+                         color: #ffffff !important;
+                         font-family: 'Segoe UI', Arial, sans-serif;
+                         font-size: 11px !important;
+                         font-weight: 400 !important;
+                         line-height: 1 !important;
+                         text-align: center;
+                         text-transform: none !important;
+                         letter-spacing: normal !important;
+                         white-space: nowrap;
+                         box-sizing: border-box;">
+                  Voir
+                </span>
+
+                <span
+                  style="font-size: 14px;
+                         font-weight: bold;
+                         color: #444;
+                         line-height: 1.3;
+                         text-align: left;
+                         text-transform: none !important;
+                         letter-spacing: normal !important;">
+                  ${title}
+
+                  <span
+                    style="font-size: 12px;
+                           color: #7f8c8d;
+                           font-weight: normal;
+                           display: block;
+                           margin-top: 2px;">
+                    (${date})
+                  </span>
+
+                </span>
+
+              </a>`;
+            }).join("\n");
+
+            // Page HTML complète destinée à être intégrée dans Magistère
+            const html = `<!DOCTYPE html>
+          <html lang="fr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+            <style>
+              html,
+              body {
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                font-family: "Segoe UI", Arial, sans-serif;
+              }
+
+              * {
+                box-sizing: border-box;
+              }
+
+              .replays {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+              }
+
+              .replays a:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 10px rgba(65,105,225,0.15) !important;
+              }
+            </style>
+          </head>
+
+          <body>
+
+            <div class="replays">
+              ${replayBlocks}
+            </div>
+
+          </body>
+          </html>`;
+
+            fs.writeFileSync(
+              "replays.html",
+              html,
+              "utf8"
+            );
+
+            console.log(
+              "replays.html généré avec succès."
+            );
+          }
+
+          main().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          EOF
+
+      - name: Commit updated replays
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add replays.html
+
+          if git diff --cached --quiet; then
+            echo "Aucune modification des replays."
+          else
+            git commit -m "Update CREIA latest replays"
+            git push
+          fi
